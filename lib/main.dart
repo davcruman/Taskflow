@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // El archivo que acabas de generar
+import 'firebase_options.dart';
+import 'auth_wrapper.dart'; // Importamos vuestro nuevo "controlador de tráfico"
 
 void main() async {
-  // 1. Aseguramos que Flutter esté listo antes de llamar a Firebase
+  // 1. Aseguramos que los enlaces de Flutter estén listos
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Inicializamos Firebase con tus credenciales
+  // 2. Inicializamos Firebase con la configuración generada por el CLI
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -19,23 +20,16 @@ class TaskFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'TaskFlow',
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.cloud_done, size: 80, color: Colors.green),
-              SizedBox(height: 20),
-              Text(
-                'Firebase Conectado 🎉',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true, // Para que tenga un diseño más moderno
       ),
+      // 3. El punto de entrada ahora es el Wrapper. 
+      // Él decidirá si mostrar el Login o la Home.
+      home: const AuthWrapper(),
     );
   }
 }
