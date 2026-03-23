@@ -12,8 +12,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService(); // Instancia del servicio
-  
+  final AuthService _authService = AuthService();
+
   bool isLogin = true;
   bool isLoading = false;
 
@@ -25,21 +25,28 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _submit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => isLoading = true);
-      
-      String? error;
-      if (isLogin) {
-        error = await _authService.iniciarSesion(_emailController.text, _passwordController.text);
-      } else {
-        error = await _authService.registrar(_emailController.text, _passwordController.text);
-      }
+    if (!_formKey.currentState!.validate()) return;
 
-      if (mounted) {
-        setState(() => isLoading = false);
-        if (error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
-        }
+    setState(() => isLoading = true);
+    String? error;
+
+    if (isLogin) {
+      error = await _authService.iniciarSesion(_emailController.text, _passwordController.text);
+    } else {
+      error = await _authService.registrar(_emailController.text, _passwordController.text);
+      if (error == null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("¡Registro completado! 🎉"), backgroundColor: Colors.green),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() => isLoading = false);
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -53,11 +60,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Form(
             key: _formKey,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.task_alt, size: 100, color: Theme.of(context).primaryColor),
                 const SizedBox(height: 20),
-                Text(isLogin ? "Bienvenido" : "Crear Cuenta", 
-                     style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(isLogin ? "Bienvenido" : "Crear Cuenta", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 30),
                 TextFormField(
                   controller: _emailController,
