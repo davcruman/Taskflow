@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
+import 'screens/home_screen.dart'; 
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -13,22 +14,21 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: authService.usuarioEstado,
       builder: (context, snapshot) {
-        // Si el snapshot tiene datos, significa que hay un usuario logueado
-        if (snapshot.hasData) {
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text("TaskFlow Home"),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.exit_to_app),
-                  onPressed: () => authService.salir(),
-                )
-              ],
-            ),
-            body: const Center(child: Text("¡Has iniciado sesión con éxito!")),
+        // 1. Mientras comprueba si hay sesión (Cargando)
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
-        } else {
-          // Si no hay datos, mostramos el login
+        }
+
+        // 2. Si el snapshot tiene datos, el usuario está logueado
+        if (snapshot.hasData) {
+          // IMPORTANTE: Aquí llamamos a tu pantalla real de la Persona A
+          return const HomeScreen(); 
+        } 
+        
+        // 3. Si no hay datos, mostramos el login
+        else {
           return const LoginScreen();
         }
       },
