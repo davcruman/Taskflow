@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
+import '../repositories/task_repository.dart'; // Importamos tu repositorio
 import '../ui/widgets/task_item.dart';
 import 'add_task_screen.dart';
 import 'settings_screen.dart';
@@ -12,21 +13,20 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Color "hueso" para el modo claro, mucho más premium que el blanco puro
+    // Color "hueso" premium
     final Color bg = isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F7);
 
     return Scaffold(
       backgroundColor: bg,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
-        slivers: [ // <--- CORREGIDO: Tenía una 'i' menos
+        slivers: [
           SliverAppBar(
             expandedHeight: 160,
             floating: false,
             pinned: true,
             backgroundColor: bg,
             elevation: 0,
-            // Botones de acción minimalistas
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined, size: 22),
@@ -68,7 +68,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
                   Text(
-                    "PRIORITARIAS",
+                    "MIS TAREAS REALES",
                     style: TextStyle(
                       fontSize: 11, 
                       fontWeight: FontWeight.bold, 
@@ -78,8 +78,34 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Mapeamos las tareas directamente aquí
-                  ..._getMockTasks().map((task) => TaskItem(task: task)).toList(),
+                  // --- CONEXIÓN REAL CON FIRESTORE ---
+                  StreamBuilder<List<Task>>(
+                    stream: TaskRepository().getTasks(), // Tu tubería
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text("Error al cargar datos"));
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final tasks = snapshot.data ?? [];
+
+                      if (tasks.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: Text("No hay tareas pendientes ✨", 
+                              style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: tasks.map((task) => TaskItem(task: task)).toList(),
+                      );
+                    },
+                  ),
                   
                   const SizedBox(height: 100),
                 ],
@@ -91,7 +117,7 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTaskScreen())),
         backgroundColor: isDark ? Colors.white : const Color(0xFF1C1C1C),
-        elevation: 0, // Sin sombra para un look más "flat" y moderno
+        elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         label: Text(
           "Añadir", 
@@ -100,28 +126,5 @@ class HomeScreen extends StatelessWidget {
         icon: Icon(Icons.add, color: isDark ? Colors.black : Colors.white),
       ),
     );
-  }
-
-  // Datos de prueba dentro del mismo archivo para que no falle nada
-  List<Task> _getMockTasks() {
-    return [
-      Task(
-        id: '1', 
-        title: "Rúbrica de PMDM", 
-        description: "Comprobar puntos de nivel GRAVE.", 
-        date: DateTime.now(), 
-        priority: TaskPriority.alta, 
-        color: const Color(0xFFE57373)
-      ),
-      Task(
-        id: '2', 
-        title: "UI de Calendario", 
-        description: "Usar el paquete table_calendar.", 
-        date: DateTime.now(), 
-        priority: TaskPriority.media, 
-        color: const Color(0xFF81C784),
-        isCompleted: true
-      ),
-    ];
   }
 }

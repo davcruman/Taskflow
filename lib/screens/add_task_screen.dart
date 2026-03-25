@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
+import '../repositories/task_repository.dart'; // Importamos tu motor
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -36,6 +37,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
+  // Lógica de Backend: Asignamos un color según la prioridad para la UI de tu colega
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.alta: return const Color(0xFFE57373); // Rojo
+      case TaskPriority.media: return const Color(0xFF81C784); // Verde
+      case TaskPriority.baja: return const Color(0xFF64B5F6); // Azul
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +56,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Título de la tarea
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: "Título de la tarea", border: OutlineInputBorder()),
@@ -54,7 +63,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
               
-              // Descripción
               TextFormField(
                 controller: _descController,
                 maxLines: 3,
@@ -62,7 +70,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Selector de Prioridad
               const Text("Prioridad:", style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButton<TaskPriority>(
                 value: _selectedPriority,
@@ -77,7 +84,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Selector de Fecha
               ListTile(
                 title: Text("Fecha: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}"),
                 trailing: const Icon(Icons.calendar_month),
@@ -87,13 +93,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Botón Guardar
+              // BOTÓN CONECTADO A FIREBASE
               ElevatedButton(
                 style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    // Aquí es donde en el futuro Persona B guardará en Firebase
-                    Navigator.pop(context);
+                    // Llamada al Repositorio para guardar en Firestore
+                    await TaskRepository().saveTask(
+                      title: _titleController.text,
+                      description: _descController.text,
+                      priority: _selectedPriority,
+                      color: _getPriorityColor(_selectedPriority),
+                      date: _selectedDate,
+                    );
+                    
+                    if (mounted) Navigator.pop(context);
                   }
                 },
                 child: const Text("Guardar Tarea"),
