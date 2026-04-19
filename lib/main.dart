@@ -2,21 +2,24 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// TUS IMPORTS (Asegúrate de que las rutas coincidan)
+// TUS IMPORTS
 import 'firebase_options.dart';
-import 'auth_wrapper.dart'; // Tu "policía" de la navegación
-import 'ui/providers/ui_provider.dart'; // Tu controlador de Modo Oscuro
+import 'auth_wrapper.dart'; 
+import 'ui/providers/ui_provider.dart'; 
+import 'services/notification_service.dart'; // <--- IMPORT AÑADIDO
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicialización de Firebase (Lo de tu amigo)
+  // Inicialización de Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Inicialización de Notificaciones
+  await NotificationService.init(); // <--- LLAMADA AÑADIDA
+
   runApp(
-    // Como ahora solo tenemos un Provider (el tuyo), usamos ChangeNotifierProvider directo
     ChangeNotifierProvider(
       create: (_) => UIProvider(),
       child: const TaskFlowApp(),
@@ -29,17 +32,14 @@ class TaskFlowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchamos al UIProvider para saber si el usuario quiere Modo Oscuro
     final uiProvider = Provider.of<UIProvider>(context);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TaskFlow',
       
-      // CONFIGURACIÓN DE TEMA DINÁMICO
       themeMode: uiProvider.themeMode, 
       
-      // Tema Claro (Light)
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.deepPurple,
@@ -47,7 +47,6 @@ class TaskFlowApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
       
-      // Tema Oscuro (Dark)
       darkTheme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.deepPurple,
@@ -55,7 +54,6 @@ class TaskFlowApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
 
-      // Punto de entrada
       home: const AuthWrapper(),
     );
   }

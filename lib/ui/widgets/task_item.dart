@@ -4,14 +4,14 @@ import '../../repositories/task_repository.dart';
 
 class TaskItem extends StatelessWidget {
   final Task task;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
   const TaskItem({
-    super.key, 
-    required this.task, 
-    this.onTap, 
-    this.onLongPress
+    super.key,
+    required this.task,
+    this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -20,8 +20,23 @@ class TaskItem extends StatelessWidget {
 
     return Dismissible(
       key: Key(task.id),
-      direction: DismissDirection.endToStart,
+      // Permitimos ambas direcciones
+      direction: DismissDirection.horizontal,
+      
+      // Fondo al deslizar a la DERECHA (Completar)
       background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 30),
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.green,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: const Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
+      ),
+
+      // Fondo al deslizar a la IZQUIERDA (Borrar)
+      secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 30),
         margin: const EdgeInsets.only(bottom: 20),
@@ -31,22 +46,25 @@ class TaskItem extends StatelessWidget {
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
+
+      // Lógica según la dirección
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Si desliza a la derecha, completamos y NO borramos el widget
+          TaskRepository().toggleTaskStatus(task.id, task.isCompleted);
+          return false; // Retornamos false para que la tarjeta vuelva a su sitio
+        } else {
+          // Si desliza a la izquierda, borramos
+          return true; 
+        }
+      },
       onDismissed: (direction) {
-        TaskRepository().deleteTask(task.id);
-        
-        // Feedback inmediato al usuario
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Tarea '${task.title}' eliminada"),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: "OK",
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
+        if (direction == DismissDirection.endToStart) {
+          TaskRepository().deleteTask(task.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Tarea '${task.title}' eliminada"), behavior: SnackBarBehavior.floating),
+          );
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
@@ -64,8 +82,8 @@ class TaskItem extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: ListTile(
-            onTap: onTap, 
-            onLongPress: onLongPress, 
+            onTap: onTap, // Ahora esto llevará a editar (se configura en HomeScreen)
+            onLongPress: onLongPress,
             contentPadding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
             leading: Container(
               width: 4,
@@ -104,11 +122,7 @@ class TaskItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "${task.date.day}/${task.date.month}",
-                  style: TextStyle(
-                    fontSize: 10, 
-                    color: isDark ? Colors.white38 : Colors.black38,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
                 ),
               ],
             ),

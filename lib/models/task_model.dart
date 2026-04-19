@@ -11,7 +11,8 @@ class Task {
   final TaskPriority priority;
   final Color color;
   bool isCompleted;
-  final String userId; // Añadimos esto para que cada usuario vea lo suyo
+  final String userId;
+  final int? reminderMinutes; // <--- NUEVO: Minutos antes para el aviso (puede ser nulo)
 
   Task({
     required this.id,
@@ -22,18 +23,43 @@ class Task {
     required this.color,
     this.isCompleted = false,
     required this.userId,
+    this.reminderMinutes, // <--- NUEVO
   });
+
+  // --- Método copyWith actualizado para incluir recordatorios ---
+  Task copyWith({
+    String? title,
+    String? description,
+    DateTime? date,
+    TaskPriority? priority,
+    Color? color,
+    bool? isCompleted,
+    int? reminderMinutes, // <--- NUEVO
+  }) {
+    return Task(
+      id: id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      priority: priority ?? this.priority,
+      color: color ?? this.color,
+      isCompleted: isCompleted ?? this.isCompleted,
+      userId: userId,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes, // <--- NUEVO
+    );
+  }
 
   // 1. De "Task" a "Mapa" (Para guardar en Firestore)
   Map<String, dynamic> toMap() {
     return {
       'title': title,
       'description': description,
-      'date': date, // Firestore acepta DateTime directamente
-      'priority': priority.name, // Guardamos "alta", "media" o "baja" como texto
-      'color': color.value,      // Guardamos el color como un número (int)
+      'date': date,
+      'priority': priority.name,
+      'color': color.value,
       'isCompleted': isCompleted,
       'userId': userId,
+      'reminderMinutes': reminderMinutes, // <--- NUEVO
     };
   }
 
@@ -46,12 +72,11 @@ class Task {
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       date: (data['date'] as Timestamp).toDate(),
-      // Convertimos el texto de nuevo a Enum
       priority: TaskPriority.values.byName(data['priority'] ?? 'media'),
-      // Convertimos el número de nuevo a Color
       color: Color(data['color'] ?? 0xFF42A5F5),
       isCompleted: data['isCompleted'] ?? false,
       userId: data['userId'] ?? '',
+      reminderMinutes: data['reminderMinutes'], // <--- NUEVO
     );
   }
 }
