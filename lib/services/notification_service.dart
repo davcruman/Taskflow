@@ -1,3 +1,4 @@
+import 'dart:typed_data'; 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -15,8 +16,6 @@ class NotificationService {
       android: androidSettings,
     );
 
-    // SOLUCIÓN FINAL SEGÚN TU ERROR: 
-    // El compilador te dice que espera el nombre 'settings:'
     await _notifications.initialize(
       settings: initSettings, 
     );
@@ -27,23 +26,49 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledDate,
+    bool enableVibration = true,
   }) async {
-    // Para zonedSchedule en v20, todos deben llevar nombre
     await _notifications.zonedSchedule(
       id: id,
       title: title,
       body: body,
       scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'task_channel',
           'Tareas',
           channelDescription: 'Notificaciones de tareas pendientes',
           importance: Importance.max,
           priority: Priority.high,
+          enableVibration: enableVibration,
+          // SOLUCIÓN AL ERROR DE Int64List:
+          vibrationPattern: enableVibration 
+              ? Int64List.fromList([0, 500, 200, 500]) 
+              : null,
         ),
       ),
+      // SOLUCIÓN AL ERROR DE uiLocalNotificationDateInterpretation:
+      // En la v20 se usa esta propiedad:
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
+  static Future<void> showInstantNotification() async {
+    // SOLUCIÓN A LOS POSITIONAL ARGUMENTS: 
+    // En la v20, todos los argumentos de .show deben ser NOMBRADOS
+    await _notifications.show(
+      id: 999, 
+      title: '¡Funciona!', 
+      body: 'Si el móvil ha vibrado, todo está bien configurado.', 
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'test_channel',
+          'Pruebas',
+          importance: Importance.max,
+          priority: Priority.high,
+          enableVibration: true,
+        ),
+      ),
     );
   }
 }

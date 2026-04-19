@@ -1,12 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // <--- IMPORTANTE PARA EL STREAM
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // TUS IMPORTS
 import 'firebase_options.dart';
-import 'auth_wrapper.dart'; 
 import 'ui/providers/ui_provider.dart'; 
-import 'services/notification_service.dart'; // <--- IMPORT AÑADIDO
+import 'services/notification_service.dart';
+import 'screens/home_screen.dart';  // Asegúrate de que la ruta sea correcta
+import 'screens/login_screen.dart'; // Asegúrate de que la ruta sea correcta
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +19,7 @@ void main() async {
   );
 
   // Inicialización de Notificaciones
-  await NotificationService.init(); // <--- LLAMADA AÑADIDA
+  await NotificationService.init();
 
   runApp(
     ChangeNotifierProvider(
@@ -54,7 +56,26 @@ class TaskFlowApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
 
-      home: const AuthWrapper(),
+      // CAMBIO CLAVE: Usamos StreamBuilder en lugar de AuthWrapper
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          // Si Firebase está cargando la sesión
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          // Si snapshot tiene datos, hay un usuario activo -> Vamos a la Home
+          if (snapshot.hasData) {
+            return const HomeScreen();
+          }
+
+          // Si no hay datos, el usuario cerró sesión o no ha entrado -> Login
+          return const LoginScreen();
+        },
+      ),
     );
   }
 }
