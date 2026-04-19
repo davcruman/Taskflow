@@ -45,18 +45,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
-                
-                // --- CONFIGURACIÓN PARA QUITAR EL "2 WEEKS" ---
                 calendarFormat: CalendarFormat.month, 
                 headerStyle: const HeaderStyle(
-                  formatButtonVisible: false, // Oculta el botón que cambia a "2 weeks"
+                  formatButtonVisible: false, 
                   titleCentered: true,
                 ),
                 availableCalendarFormats: const {
-                  CalendarFormat.month: 'Mes', // Bloquea el formato solo a mes
+                  CalendarFormat.month: 'Mes',
                 },
-                // ----------------------------------------------
-
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
@@ -65,17 +61,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   });
                 },
                 eventLoader: _getTasksForDay,
-                calendarStyle: CalendarStyle(
-                  markersAlignment: Alignment.bottomCenter,
-                  markerDecoration: const BoxDecoration(
-                    color: Colors.deepPurple,
-                    shape: BoxShape.circle,
-                  ),
+                
+                // --- MARCADOR ÚNICO PERSONALIZADO ---
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, date, events) {
+                    if (events.isNotEmpty) {
+                      return Positioned(
+                        bottom: 4,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.deepPurpleAccent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }
+                    return null;
+                  },
+                ),
+
+                calendarStyle: const CalendarStyle(
+                  // SOLUCIÓN: markerSize a 0 oculta los puntos por defecto
+                  markerSize: 0, 
                   todayDecoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.5), 
+                    color: Colors.black12, 
                     shape: BoxShape.circle,
                   ),
-                  selectedDecoration: const BoxDecoration(
+                  selectedDecoration: BoxDecoration(
                     color: Colors.deepPurple,
                     shape: BoxShape.circle,
                   ),
@@ -101,21 +115,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
       itemCount: tasks.length, 
       itemBuilder: (context, index) {
         final task = tasks[index];
+        final String hora = "${task.date.hour}:${task.date.minute.toString().padLeft(2, '0')}";
+
         return ListTile(
-          leading: CircleAvatar(backgroundColor: task.color),
-          title: Text(task.title),
-          subtitle: Text(task.description),
+          leading: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: task.color, shape: BoxShape.circle),
+          ),
+          title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text("${task.description}\n⏰ Hora: $hora"),
+          isThreeLine: task.description.isNotEmpty,
           trailing: Icon(
             task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: task.isCompleted ? Colors.green : null,
+            color: task.isCompleted ? Colors.green : Colors.grey,
           ),
-          onTap: () => _showTaskDetails(task),
+          onTap: () => _showTaskDetails(task, hora),
         );
       },
     );
   }
 
-  void _showTaskDetails(Task task) {
+  void _showTaskDetails(Task task, String hora) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -124,10 +145,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Descripción: ${task.description}"),
+            if (task.description.isNotEmpty) Text("Descripción: ${task.description}"),
             const SizedBox(height: 10),
-            Text("Prioridad: ${task.priority.name}"),
-            Text("Fecha: ${task.date.toString().split(' ')[0]}"),
+            Text("Prioridad: ${task.priority.name.toUpperCase()}"),
+            Text("Hora: $hora"),
+            Text("Fecha: ${task.date.day}/${task.date.month}/${task.date.year}"),
           ],
         ),
         actions: [

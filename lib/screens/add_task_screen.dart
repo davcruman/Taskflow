@@ -17,10 +17,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   late TextEditingController _descController;
   
   late DateTime _selectedDate;
+  late TimeOfDay _selectedTime; // <--- NUEVO: Para la hora
   late TaskPriority _selectedPriority;
   late bool isEditing;
 
-  // NUEVO: Variable para el recordatorio y sus opciones
   int? _selectedReminder; 
   final List<Map<String, dynamic>> _reminderOptions = [
     {'label': 'Sin recordatorio', 'value': null},
@@ -37,10 +37,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     _titleController = TextEditingController(text: widget.taskToEdit?.title ?? '');
     _descController = TextEditingController(text: widget.taskToEdit?.description ?? '');
-    _selectedDate = widget.taskToEdit?.date ?? DateTime.now();
-    _selectedPriority = widget.taskToEdit?.priority ?? TaskPriority.media;
     
-    // Cargamos el recordatorio si estamos editando
+    // Si editamos, extraemos fecha y hora de la tarea. Si no, usamos el "ahora".
+    _selectedDate = widget.taskToEdit?.date ?? DateTime.now();
+    _selectedTime = widget.taskToEdit != null 
+        ? TimeOfDay.fromDateTime(widget.taskToEdit!.date) 
+        : TimeOfDay.now();
+    
+    _selectedPriority = widget.taskToEdit?.priority ?? TaskPriority.media;
     _selectedReminder = widget.taskToEdit?.reminderMinutes;
   }
 
@@ -50,6 +54,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _descController.dispose();
     super.dispose();
   }
+
+  // --- LÓGICA DE SELECCIÓN ---
 
   void _presentDatePicker() async {
     final pickedDate = await showDatePicker(
@@ -61,6 +67,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (pickedDate != null) {
       setState(() => _selectedDate = pickedDate);
     }
+  }
+
+  void _presentTimePicker() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (pickedTime != null) {
+      setState(() => _selectedTime = pickedTime);
+    }
+  }
+
+  // FUNCIÓN CLAVE: Fusiona el día elegido con la hora elegida
+  DateTime _getCombinedDateTime() {
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
   }
 
   Color _getPriorityColor(TaskPriority priority) {
@@ -111,7 +138,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
 
-              // --- NUEVO SECTOR DE RECORDATORIO ---
               const Text("Recordatorio:", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               DropdownButtonFormField<int?>(
@@ -132,13 +158,33 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 20),
 
-              ListTile(
-                title: Text("Fecha: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}"),
-                trailing: const Icon(Icons.calendar_month),
-                onTap: _presentDatePicker,
-                tileColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              // --- SELECTORES DE FECHA Y HORA ---
+              Row(
+                children: [
+                  Expanded(
+                    child: ListTile(
+                      title: const Text("Fecha", style: TextStyle(fontSize: 12)),
+                      subtitle: Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}"),
+                      trailing: const Icon(Icons.calendar_month, size: 20),
+                      onTap: _presentDatePicker,
+                      tileColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ListTile(
+                      title: const Text("Hora", style: TextStyle(fontSize: 12)),
+                      subtitle: Text(_selectedTime.format(context)),
+                      trailing: const Icon(Icons.access_time, size: 20),
+                      onTap: _presentTimePicker,
+                      tileColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
               ),
+              
               const SizedBox(height: 40),
 
               ElevatedButton(
@@ -148,14 +194,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
+                    // Obtenemos el DateTime que incluye la HORA
+                    final DateTime fullTaskDate = _getCombinedDateTime();
+
                     if (isEditing) {
                       final updatedTask = widget.taskToEdit!.copyWith(
                         title: _titleController.text,
                         description: _descController.text,
                         priority: _selectedPriority,
                         color: _getPriorityColor(_selectedPriority),
-                        date: _selectedDate,
-                        reminderMinutes: _selectedReminder, // PASAMOS EL RECORDATORIO
+                        date: fullTaskDate, // <--- HORA INCLUIDA
+                        reminderMinutes: _selectedReminder,
                       );
                       await TaskRepository().updateTask(updatedTask);
                     } else {
@@ -164,8 +213,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         description: _descController.text,
                         priority: _selectedPriority,
                         color: _getPriorityColor(_selectedPriority),
-                        date: _selectedDate,
-                        reminderMinutes: _selectedReminder, // PASAMOS EL RECORDATORIO
+                        date: fullTaskDate, // <--- HORA INCLUIDA
+                        reminderMinutes: _selectedReminder,
                       );
                     }
                     
