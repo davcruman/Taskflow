@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:easy_localization/easy_localization.dart'; // Importante
 import '../ui/providers/ui_provider.dart';
-import '../utils/app_logger.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,33 +14,44 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  // Estados locales para los interruptores
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   bool _notificationsEnabled = false;
-  bool _vibrationEnabled = true;
 
-  // Función para gestionar permisos de notificación
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkNotificationPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkNotificationPermission();
+    }
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    final plugin = FlutterLocalNotificationsPlugin();
+    final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final bool? isGranted = await android?.areNotificationsEnabled();
+    if (mounted) setState(() => _notificationsEnabled = isGranted ?? false);
+  }
+
   Future<void> _handleNotificationPermission(bool value) async {
     if (value) {
       final plugin = FlutterLocalNotificationsPlugin();
-      final androidImplementation = plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-
-      final bool? granted = await androidImplementation?.requestNotificationsPermission();
-
-      setState(() {
-        _notificationsEnabled = granted ?? false;
-      });
-
-      if (granted == false && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Permiso de notificaciones denegado")),
-        );
-      }
+      final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final granted = await android?.requestNotificationsPermission();
+      setState(() => _notificationsEnabled = granted ?? false);
     } else {
-      setState(() {
-        _notificationsEnabled = false;
-      });
+      await AppSettings.openAppSettings(type: AppSettingsType.notification);
     }
   }
 
@@ -47,133 +60,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final uiProvider = Provider.of<UIProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Ajustes")),
+      appBar: AppBar(title: Text("ajustes".tr())),
       body: ListView(
         children: [
-          // --- SECCIÓN: APARIENCIA ---
-          _buildHeader("Apariencia"),
+          _buildHeader("apariencia".tr()),
           ListTile(
-            leading: Icon(uiProvider.themeMode == ThemeMode.dark 
-                ? Icons.dark_mode 
-                : Icons.light_mode),
-            title: const Text("Modo Oscuro"),
+            leading: Icon(uiProvider.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+            title: Text("modo_oscuro".tr()),
             trailing: Switch(
               value: uiProvider.themeMode == ThemeMode.dark,
               onChanged: (value) => uiProvider.toggleTheme(value),
             ),
           ),
-          
           const Divider(),
-
-          // --- SECCIÓN: NOTIFICACIONES ---
-          _buildHeader("Notificaciones"),
+          _buildHeader("notificaciones".tr()),
           SwitchListTile(
             secondary: const Icon(Icons.notifications_active_outlined),
-            title: const Text("Permitir notificaciones"),
+            title: Text("permitir_notificaciones".tr()),
             value: _notificationsEnabled,
             onChanged: (val) => _handleNotificationPermission(val),
           ),
           SwitchListTile(
             secondary: const Icon(Icons.vibration),
-            title: const Text("Vibración"),
-            value: _vibrationEnabled,
-            onChanged: _notificationsEnabled 
-                ? (val) => setState(() => _vibrationEnabled = val) 
-                : null, // Bloqueado si no hay notificaciones
+            title: Text("vibracion".tr()),
+            value: uiProvider.vibrationEnabled,
+            onChanged: _notificationsEnabled ? (val) => uiProvider.toggleVibration(val) : null,
           ),
-
           const Divider(),
-
-          // --- SECCIÓN: IDIOMA ---
-          _buildHeader("Idioma"),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text("Idioma"),
-            subtitle: Text(uiProvider.locale.languageCode == 'es' 
-                ? "Español (España)" 
-                : "English (US)"),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-            onTap: () {
-              AppLogger.i("Cambiando idioma...");
-            },
-          ),
-          RadioListTile<String>(
-            title: const Text("Español"),
-            value: 'es',
-            groupValue: uiProvider.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!),
-          ),
-          RadioListTile<String>(
-            title: const Text("English"),
-            value: 'en',
-            groupValue: uiProvider.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!),
-          ),
-
+          _buildHeader("idioma".tr()),
+         // Dentro de tu SettingsScreen, donde están los RadioListTile:
+RadioListTile<String>(
+  title: Text("espanol".tr()),
+  value: 'es',
+  groupValue: context.locale.languageCode,
+  onChanged: (value) => uiProvider.setLanguage(value!, context),
+),
+RadioListTile<String>(
+  title: Text("ingles".tr()),
+  value: 'en',
+  groupValue: context.locale.languageCode,
+  onChanged: (value) => uiProvider.setLanguage(value!, context),
+),
+RadioListTile<String>(
+  title: Text("frances".tr()),
+  value: 'fr',
+  groupValue: context.locale.languageCode,
+  onChanged: (value) => uiProvider.setLanguage(value!, context),
+),
+RadioListTile<String>(
+  title: Text("portugues".tr()),
+  value: 'pt',
+  groupValue: context.locale.languageCode,
+  onChanged: (value) => uiProvider.setLanguage(value!, context),
+),
           const Divider(),
-
-          // --- SECCIÓN NUEVA: CUENTA (MOVIDA DESDE PERFIL) ---
-          _buildHeader("Cuenta"),
+          _buildHeader("cuenta".tr()),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: const Text(
-              "Cerrar Sesión", 
-              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)
-            ),
-            subtitle: const Text("Se cerrará tu sesión actual"),
-            onTap: () async {
-              // Diálogo de confirmación antes de salir
-              _showLogoutDialog(context);
-            },
+            title: Text("cerrar_sesion".tr(), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            subtitle: Text("subtitulo_cerrar_sesion".tr()),
+            onTap: () => _showLogoutDialog(context),
           ),
-          
           const SizedBox(height: 30),
-          const Center(
-            child: Text("Versión 1.0.0", style: TextStyle(color: Colors.grey)),
-          ),
+          Center(child: Text("version".tr(args: ['1.0.0']), style: const TextStyle(color: Colors.grey))),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // Helper para no repetir código de los encabezados
   Widget _buildHeader(String title) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Text(
-        title, 
-        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)
-      ),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
     );
   }
 
-void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Cerrar sesión"),
-        content: const Text("¿Seguro que quieres salir de la aplicación?"),
+        title: Text("cerrar_sesion".tr()),
+        content: Text("seguro_salir".tr()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("cancelar".tr())),
           TextButton(
             onPressed: () async {
-              // 1. Cerramos el diálogo
               Navigator.pop(context);
-
-              // 2. Limpiamos TODA la pila de navegación hasta la raíz.
-              // Esto quita la pantalla de Ajustes y nos deja en la Home.
               Navigator.of(context).popUntil((route) => route.isFirst);
-
-              // 3. Ahora cerramos sesión. 
-              // Como ya no hay nada encima, el StreamBuilder del main
-              // cambiará la Home por el Login y lo verás al instante.
               await FirebaseAuth.instance.signOut();
             },
-            child: const Text("Sí, salir", style: TextStyle(color: Colors.red)),
+            child: Text("si_salir".tr(), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:easy_localization/easy_localization.dart'; // Importante
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 import '../ui/widgets/task_item.dart';
-import '../utils/app_logger.dart'; 
 import 'add_task_screen.dart';
 import 'settings_screen.dart';
 import '../ui/screens/calendar_screen.dart';
@@ -16,8 +16,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String searchQuery = ""; 
-  String filterType = "Todas"; 
+  String searchQuery = "";
+  String filterType = "Todas"; // Esta es la clave interna (no traducir)
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           SliverAppBar(
             expandedHeight: 120,
-            floating: false,
             pinned: true,
             backgroundColor: bg,
             elevation: 0,
             actions: [
-              // --- BOTÓN DE CALENDARIO AÑADIDO ---
               IconButton(
                 icon: const Icon(Icons.calendar_month_outlined, size: 22),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarScreen())),
@@ -53,15 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 25, bottom: 15),
-              title: Text(
-                "TaskFlow",
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1C1C1C),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 26,
-                  letterSpacing: -1,
-                ),
-              ),
+              title: const Text("TaskFlow", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26, letterSpacing: -1)),
             ),
           ),
           SliverToBoxAdapter(
@@ -71,35 +61,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Hola, $name. Tienes tareas para hoy.",
+                    "hola".tr(namedArgs: {'name': name}),
                     style: TextStyle(fontSize: 15, color: isDark ? Colors.white54 : Colors.black45),
                   ),
                   const SizedBox(height: 20),
-
-                  // --- BUSCADOR ---
                   TextField(
                     onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
                     decoration: InputDecoration(
-                      hintText: "Buscar tareas...",
+                      hintText: "buscar_tareas".tr(),
                       prefixIcon: const Icon(Icons.search, size: 20),
                       filled: true,
                       fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                   ),
                   const SizedBox(height: 15),
-
-                  // --- FILTROS RÁPIDOS ---
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: ["Todas", "Pendientes", "Completadas"].map((filter) {
                         bool isSelected = filterType == filter;
+                        // Traducimos solo la etiqueta que ve el usuario
+                        String label = filter.toLowerCase().tr(); 
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: ChoiceChip(
-                            label: Text(filter),
+                            label: Text(label),
                             selected: isSelected,
                             onSelected: (val) => setState(() => filterType = filter),
                             selectedColor: isDark ? Colors.white : Colors.black,
@@ -110,43 +97,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   Text(
-                    "MIS TAREAS",
+                    "mis_tareas".tr(),
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2, color: isDark ? Colors.white30 : Colors.black26),
                   ),
                   const SizedBox(height: 15),
-                  
                   StreamBuilder<List<Task>>(
                     stream: taskRepo.getTasks(),
                     builder: (context, snapshot) {
-                      if (snapshot.hasError) return const Center(child: Text("Error al cargar datos"));
-                      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-
-                      final allTasks = snapshot.data ?? [];
-                      
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final allTasks = snapshot.data!;
                       final filteredTasks = allTasks.where((task) {
                         final matchesSearch = task.title.toLowerCase().contains(searchQuery);
                         bool matchesStatus = true;
                         if (filterType == "Pendientes") matchesStatus = !task.isCompleted;
                         if (filterType == "Completadas") matchesStatus = task.isCompleted;
-
                         return matchesSearch && matchesStatus;
                       }).toList();
-
-                      if (filteredTasks.isEmpty) {
-                        return Center(child: Text("\nNo se encontraron tareas", style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)));
-                      }
-
-                      return Column(
-                        children: filteredTasks.map((task) => TaskItem(
-                          task: task,
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddTaskScreen(taskToEdit: task))),
-                        )).toList(),
-                      );
+                      if (filteredTasks.isEmpty) return Center(child: Text("sin_tareas".tr(), style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)));
+                      return Column(children: filteredTasks.map((t) => TaskItem(task: t, onTap: () {})).toList());
                     },
                   ),
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -155,9 +126,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTaskScreen())),
-        backgroundColor: isDark ? Colors.white : const Color(0xFF1C1C1C),
-        label: Text("Añadir", style: TextStyle(color: isDark ? Colors.black : Colors.white, fontWeight: FontWeight.bold)),
-        icon: Icon(Icons.add, color: isDark ? Colors.black : Colors.white),
+        label: Text("anadir".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add),
       ),
     );
   }

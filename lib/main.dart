@@ -1,30 +1,36 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // <--- IMPORTANTE PARA EL STREAM
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart'; // 1. Importa esto
 
-// TUS IMPORTS
 import 'firebase_options.dart';
 import 'ui/providers/ui_provider.dart'; 
 import 'services/notification_service.dart';
-import 'screens/home_screen.dart';  // Asegúrate de que la ruta sea correcta
-import 'screens/login_screen.dart'; // Asegúrate de que la ruta sea correcta
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Inicialización de Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // 2. Inicializa easy_localization
+  await EasyLocalization.ensureInitialized();
 
-  // Inicialización de Notificaciones
   await NotificationService.init();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => UIProvider(),
-      child: const TaskFlowApp(),
+    // 3. Envuelve todo en EasyLocalization
+    EasyLocalization(
+      supportedLocales: const [Locale('es'), Locale('en'),Locale('fr'),Locale('pt')],
+      path: 'assets/translations', // Carpeta donde crearás tus .json
+      fallbackLocale: const Locale('es'),
+      child: ChangeNotifierProvider(
+        create: (_) => UIProvider(),
+        child: const TaskFlowApp(),
+      ),
     ),
   );
 }
@@ -40,15 +46,18 @@ class TaskFlowApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'TaskFlow',
       
-      themeMode: uiProvider.themeMode, 
+      // 4. Configura el MaterialApp para que use los idiomas
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale, // Usamos el locale que viene de tu UIProvider
       
+      themeMode: uiProvider.themeMode, 
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.deepPurple,
         brightness: Brightness.light,
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
-      
       darkTheme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.deepPurple,
@@ -56,23 +65,17 @@ class TaskFlowApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(centerTitle: true),
       ),
 
-      // CAMBIO CLAVE: Usamos StreamBuilder en lugar de AuthWrapper
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Si Firebase está cargando la sesión
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          
-          // Si snapshot tiene datos, hay un usuario activo -> Vamos a la Home
           if (snapshot.hasData) {
             return const HomeScreen();
           }
-
-          // Si no hay datos, el usuario cerró sesión o no ha entrado -> Login
           return const LoginScreen();
         },
       ),

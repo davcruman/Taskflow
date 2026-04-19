@@ -1,21 +1,28 @@
+// lib/ui/providers/ui_provider.dart
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class UIProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
-  Locale _locale = const Locale('es');
+  bool _vibrationEnabled = true;
 
   ThemeMode get themeMode => _themeMode;
-  Locale get locale => _locale;
+  bool get vibrationEnabled => _vibrationEnabled;
 
-  // Cambiar entre sol y luna
   void toggleTheme(bool isDark) {
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners(); // Esto redibuja toda la app con los nuevos colores
+    notifyListeners();
   }
 
-  // Cambiar entre español e inglés
-  void setLanguage(String code) {
-    _locale = Locale(code);
+  void toggleVibration(bool value) {
+    _vibrationEnabled = value;
+    notifyListeners();
+  }
+
+  // MÉTODO CLAVE:
+  void setLanguage(String code, BuildContext context) {
+    final newLocale = Locale(code);
+    context.setLocale(newLocale); // Esto es lo que cambia el idioma globalmente
     notifyListeners();
   }
 }

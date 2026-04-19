@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../models/task_model.dart';
 import '../../repositories/task_repository.dart';
 
@@ -29,7 +30,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendario de Tareas')),
+      appBar: AppBar(title: Text('calendario_titulo'.tr())),
       body: StreamBuilder<List<Task>>(
         stream: _repository.getTasks(),
         builder: (context, snapshot) {
@@ -42,6 +43,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           return Column(
             children: [
               TableCalendar(
+                locale: context.locale.languageCode, // <--- IDIOMA DINÁMICO
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
@@ -50,8 +52,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   formatButtonVisible: false, 
                   titleCentered: true,
                 ),
-                availableCalendarFormats: const {
-                  CalendarFormat.month: 'Mes',
+                availableCalendarFormats: {
+                  CalendarFormat.month: 'mes'.tr(),
                 },
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
@@ -61,8 +63,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   });
                 },
                 eventLoader: _getTasksForDay,
-                
-                // --- MARCADOR ÚNICO PERSONALIZADO ---
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
                     if (events.isNotEmpty) {
@@ -81,18 +81,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     return null;
                   },
                 ),
-
                 calendarStyle: const CalendarStyle(
-                  // SOLUCIÓN: markerSize a 0 oculta los puntos por defecto
                   markerSize: 0, 
-                  todayDecoration: BoxDecoration(
-                    color: Colors.black12, 
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Colors.deepPurple,
-                    shape: BoxShape.circle,
-                  ),
+                  todayDecoration: BoxDecoration(color: Colors.black12, shape: BoxShape.circle),
+                  selectedDecoration: BoxDecoration(color: Colors.deepPurple, shape: BoxShape.circle),
                 ),
               ),
               const Divider(),
@@ -108,7 +100,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildTaskList(List<Task> tasks) {
     if (tasks.isEmpty) {
-      return const Center(child: Text('No hay tareas para este día'));
+      return Center(child: Text('no_hay_tareas'.tr()));
     }
 
     return ListView.builder(
@@ -118,13 +110,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final String hora = "${task.date.hour}:${task.date.minute.toString().padLeft(2, '0')}";
 
         return ListTile(
-          leading: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(color: task.color, shape: BoxShape.circle),
-          ),
+          leading: Container(width: 12, height: 12, decoration: BoxDecoration(color: task.color, shape: BoxShape.circle)),
           title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text("${task.description}\n⏰ Hora: $hora"),
+          subtitle: Text("${task.description}\n⏰ ${'hora_label'.tr()}: $hora"),
           isThreeLine: task.description.isNotEmpty,
           trailing: Icon(
             task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
@@ -145,17 +133,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (task.description.isNotEmpty) Text("Descripción: ${task.description}"),
+            if (task.description.isNotEmpty) Text("${'descripcion_label'.tr()}: ${task.description}"),
             const SizedBox(height: 10),
-            Text("Prioridad: ${task.priority.name.toUpperCase()}"),
-            Text("Hora: $hora"),
-            Text("Fecha: ${task.date.day}/${task.date.month}/${task.date.year}"),
+            Text("${'prioridad_label'.tr()}: ${task.priority.name.toUpperCase()}"),
+            Text("${'hora_label'.tr()}: $hora"),
+            Text("${'fecha_label'.tr()}: ${task.date.day}/${task.date.month}/${task.date.year}"),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
+            child: Text('cerrar'.tr()),
           ),
         ],
       ),
