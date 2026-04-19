@@ -6,7 +6,7 @@ import '../repositories/task_repository.dart';
 import '../ui/widgets/task_item.dart';
 import 'add_task_screen.dart';
 import 'settings_screen.dart';
-import '../ui/screens/calendar_screen.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

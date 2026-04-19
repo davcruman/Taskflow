@@ -23,6 +23,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _selectedDay = _focusedDay;
   }
 
+  // Traducción para las etiquetas de prioridad en el diálogo
+  String _getPriorityTranslation(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.alta: return "prio_alta".tr();
+      case TaskPriority.media: return "prio_media".tr();
+      case TaskPriority.baja: return "prio_baja".tr();
+    }
+  }
+
   List<Task> _getTasksForDay(DateTime day) {
     return _allTasks.where((task) => isSameDay(task.date, day)).toList();
   }
@@ -43,7 +52,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           return Column(
             children: [
               TableCalendar(
-                locale: context.locale.languageCode, // <--- IDIOMA DINÁMICO
+                // USA EL IDIOMA ACTUAL DE LA APP
+                locale: context.locale.toString(), 
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
@@ -63,6 +73,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   });
                 },
                 eventLoader: _getTasksForDay,
+                
+                // Marcador personalizado (punto debajo del día)
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
                     if (events.isNotEmpty) {
@@ -82,7 +94,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   },
                 ),
                 calendarStyle: const CalendarStyle(
-                  markerSize: 0, 
+                  markerSize: 0, // Ocultamos los marcadores nativos
                   todayDecoration: BoxDecoration(color: Colors.black12, shape: BoxShape.circle),
                   selectedDecoration: BoxDecoration(color: Colors.deepPurple, shape: BoxShape.circle),
                 ),
@@ -135,7 +147,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             if (task.description.isNotEmpty) Text("${'descripcion_label'.tr()}: ${task.description}"),
             const SizedBox(height: 10),
-            Text("${'prioridad_label'.tr()}: ${task.priority.name.toUpperCase()}"),
+            // Prioridad traducida
+            Text("${'prioridad_label'.tr()}: ${_getPriorityTranslation(task.priority)}"),
             Text("${'hora_label'.tr()}: $hora"),
             Text("${'fecha_label'.tr()}: ${task.date.day}/${task.date.month}/${task.date.year}"),
           ],

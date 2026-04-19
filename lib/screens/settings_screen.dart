@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_settings/app_settings.dart';
-import 'package:easy_localization/easy_localization.dart'; // Importante
+import 'package:easy_localization/easy_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../ui/providers/ui_provider.dart';
-
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     super.dispose();
   }
 
+  // Detecta cuando el usuario vuelve de los ajustes del sistema
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -49,10 +50,37 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       final plugin = FlutterLocalNotificationsPlugin();
       final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       final granted = await android?.requestNotificationsPermission();
+      
       setState(() => _notificationsEnabled = granted ?? false);
+
+      if (granted == false && mounted) {
+        // Si el usuario deniega, le ofrecemos ir a los ajustes del sistema
+        _showPermissionDeniedDialog();
+      }
     } else {
+      // Si el usuario quiere desactivar, le informamos que debe hacerlo en ajustes del sistema
       await AppSettings.openAppSettings(type: AppSettingsType.notification);
     }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("notificaciones".tr()),
+        content: const Text("Para activar las notificaciones, por favor habilítalas en los ajustes del sistema."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("cancelar".tr())),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              AppSettings.openAppSettings(type: AppSettingsType.notification);
+            },
+            child: const Text("Ir a Ajustes"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -88,31 +116,30 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           ),
           const Divider(),
           _buildHeader("idioma".tr()),
-         // Dentro de tu SettingsScreen, donde están los RadioListTile:
-RadioListTile<String>(
-  title: Text("espanol".tr()),
-  value: 'es',
-  groupValue: context.locale.languageCode,
-  onChanged: (value) => uiProvider.setLanguage(value!, context),
-),
-RadioListTile<String>(
-  title: Text("ingles".tr()),
-  value: 'en',
-  groupValue: context.locale.languageCode,
-  onChanged: (value) => uiProvider.setLanguage(value!, context),
-),
-RadioListTile<String>(
-  title: Text("frances".tr()),
-  value: 'fr',
-  groupValue: context.locale.languageCode,
-  onChanged: (value) => uiProvider.setLanguage(value!, context),
-),
-RadioListTile<String>(
-  title: Text("portugues".tr()),
-  value: 'pt',
-  groupValue: context.locale.languageCode,
-  onChanged: (value) => uiProvider.setLanguage(value!, context),
-),
+          RadioListTile<String>(
+            title: Text("espanol".tr()),
+            value: 'es',
+            groupValue: context.locale.languageCode,
+            onChanged: (value) => uiProvider.setLanguage(value!, context),
+          ),
+          RadioListTile<String>(
+            title: Text("ingles".tr()),
+            value: 'en',
+            groupValue: context.locale.languageCode,
+            onChanged: (value) => uiProvider.setLanguage(value!, context),
+          ),
+          RadioListTile<String>(
+            title: Text("frances".tr()),
+            value: 'fr',
+            groupValue: context.locale.languageCode,
+            onChanged: (value) => uiProvider.setLanguage(value!, context),
+          ),
+          RadioListTile<String>(
+            title: Text("portugues".tr()),
+            value: 'pt',
+            groupValue: context.locale.languageCode,
+            onChanged: (value) => uiProvider.setLanguage(value!, context),
+          ),
           const Divider(),
           _buildHeader("cuenta".tr()),
           ListTile(
@@ -147,8 +174,10 @@ RadioListTile<String>(
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              Navigator.of(context).popUntil((route) => route.isFirst);
               await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
             },
             child: Text("si_salir".tr(), style: const TextStyle(color: Colors.red)),
           ),

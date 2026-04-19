@@ -53,6 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- DETECTAMOS SI ESTAMOS EN MODO OSCURO ---
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -62,9 +65,17 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.task_alt, size: 100, color: Theme.of(context).primaryColor),
+                // --- CAMBIO AQUÍ: El color cambia según el modo ---
+                Icon(
+                  Icons.task_alt, 
+                  size: 100, 
+                  color: isDarkMode ? Colors.deepPurpleAccent : Theme.of(context).primaryColor,
+                ),
                 const SizedBox(height: 20),
-                Text(isLogin ? "Bienvenido" : "Crear Cuenta", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                Text(
+                  isLogin ? "Bienvenido" : "Crear Cuenta", 
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+                ),
                 const SizedBox(height: 30),
                 TextFormField(
                   controller: _emailController,
@@ -84,7 +95,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: isLoading ? null : _submit,
-                    child: isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(isLogin ? "Entrar" : "Registrarse"),
+                    child: isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white) 
+                      : Text(isLogin ? "Entrar" : "Registrarse"),
                   ),
                 ),
                 TextButton(
