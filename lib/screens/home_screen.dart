@@ -6,7 +6,6 @@ import '../ui/widgets/task_item.dart';
 import '../utils/app_logger.dart'; 
 import 'add_task_screen.dart';
 import 'settings_screen.dart';
-import 'profile_screen.dart';
 import '../ui/screens/calendar_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -49,10 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.settings_outlined, size: 22),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-              ),
-              IconButton(
-                icon: const Icon(Icons.person_outline, size: 22),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
               ),
               const SizedBox(width: 10),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../ui/providers/ui_provider.dart';
 import '../utils/app_logger.dart';
@@ -50,11 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         children: [
           // --- SECCIÓN: APARIENCIA ---
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("Apariencia", 
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-          ),
+          _buildHeader("Apariencia"),
           ListTile(
             leading: Icon(uiProvider.themeMode == ThemeMode.dark 
                 ? Icons.dark_mode 
@@ -68,12 +65,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const Divider(),
 
-          // --- SECCIÓN NUEVA: NOTIFICACIONES ---
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("Notificaciones", 
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-          ),
+          // --- SECCIÓN: NOTIFICACIONES ---
+          _buildHeader("Notificaciones"),
           SwitchListTile(
             secondary: const Icon(Icons.notifications_active_outlined),
             title: const Text("Permitir notificaciones"),
@@ -92,11 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(),
 
           // --- SECCIÓN: IDIOMA ---
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("Idioma", 
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-          ),
+          _buildHeader("Idioma"),
           ListTile(
             leading: const Icon(Icons.language),
             title: const Text("Idioma"),
@@ -120,12 +109,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             groupValue: uiProvider.locale.languageCode,
             onChanged: (value) => uiProvider.setLanguage(value!),
           ),
+
+          const Divider(),
+
+          // --- SECCIÓN NUEVA: CUENTA (MOVIDA DESDE PERFIL) ---
+          _buildHeader("Cuenta"),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: const Text(
+              "Cerrar Sesión", 
+              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)
+            ),
+            subtitle: const Text("Se cerrará tu sesión actual"),
+            onTap: () async {
+              // Diálogo de confirmación antes de salir
+              _showLogoutDialog(context);
+            },
+          ),
           
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           const Center(
             child: Text("Versión 1.0.0", style: TextStyle(color: Colors.grey)),
           ),
           const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  // Helper para no repetir código de los encabezados
+  Widget _buildHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Text(
+        title, 
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)
+      ),
+    );
+  }
+
+void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Cerrar sesión"),
+        content: const Text("¿Seguro que quieres salir de la aplicación?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () async {
+              // 1. Cerramos el diálogo
+              Navigator.pop(context);
+
+              // 2. Limpiamos TODA la pila de navegación hasta la raíz.
+              // Esto quita la pantalla de Ajustes y nos deja en la Home.
+              Navigator.of(context).popUntil((route) => route.isFirst);
+
+              // 3. Ahora cerramos sesión. 
+              // Como ya no hay nada encima, el StreamBuilder del main
+              // cambiará la Home por el Login y lo verás al instante.
+              await FirebaseAuth.instance.signOut();
+            },
+            child: const Text("Sí, salir", style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
