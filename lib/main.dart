@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart'; 
-import 'package:intl/date_symbol_data_local.dart'; // Para el calendario
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // <--- NUEVO
 
 import 'firebase_options.dart';
 import 'ui/providers/ui_provider.dart'; 
@@ -14,10 +15,20 @@ import 'screens/login_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 1. Inicialización de Formatos de Fecha (para que el calendario no explote)
+  // 0. Selección y Carga de Entorno
+  // Mañana puedes explicar que aquí cambias entre .env.dev y .env.prod
+  const String envFile = ".env.dev"; 
+  try {
+    await dotenv.load(fileName: envFile);
+    debugPrint("🚀 Entorno cargado: ${dotenv.env['ENVIRONMENT']}");
+  } catch (e) {
+    debugPrint("⚠️ No se pudo cargar el archivo $envFile: $e");
+  }
+
+  // 1. Inicialización de Formatos de Fecha
   await initializeDateFormatting();
 
-  // 2. Inicialización de Firebase
+  // 2. Inicialización de Firebase (Ahora leerá de los dotenv en firebase_options.dart)
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -29,7 +40,6 @@ void main() async {
   await NotificationService.init();
 
   runApp(
-    // 5. Envuelve todo en EasyLocalization para el soporte multiidioma
     EasyLocalization(
       supportedLocales: const [
         Locale('es'), 
@@ -56,9 +66,9 @@ class TaskFlowApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TaskFlow',
+      // Usamos el nombre de la app definido en el entorno cargado
+      title: dotenv.env['APP_NAME'] ?? 'TaskFlow', 
       
-      // Configuración de idiomas para EasyLocalization
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale, 
