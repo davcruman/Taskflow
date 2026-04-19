@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // <--- IMPORTANTE
 import '../ui/providers/ui_provider.dart';
 import '../utils/app_logger.dart';
 
@@ -13,12 +14,28 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Estados locales para los interruptores
   bool _notificationsEnabled = false;
   bool _vibrationEnabled = true;
 
-  // Función para gestionar permisos de notificación
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences(); // Cargamos los datos al iniciar la pantalla
+  }
+
+  // --- CARGAR PREFERENCIAS ---
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? false;
+      _vibrationEnabled = prefs.getBool('vibration_enabled') ?? true;
+    });
+  }
+
+  // --- GESTIONAR NOTIFICACIONES ---
   Future<void> _handleNotificationPermission(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    
     if (value) {
       final plugin = FlutterLocalNotificationsPlugin();
       final androidImplementation = plugin.resolvePlatformSpecificImplementation<
@@ -29,6 +46,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _notificationsEnabled = granted ?? false;
       });
+      // Guardamos el resultado del permiso
+      await prefs.setBool('notifications_enabled', _notificationsEnabled);
 
       if (granted == false && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -39,7 +58,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _notificationsEnabled = false;
       });
+      await prefs.setBool('notifications_enabled', false);
     }
+  }
+
+  // --- GESTIONAR VIBRACIÓN ---
+  Future<void> _toggleVibration(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _vibrationEnabled = value;
+    });
+    await prefs.setBool('vibration_enabled', value);
   }
 
   @override
@@ -78,8 +107,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text("Vibración"),
             value: _vibrationEnabled,
             onChanged: _notificationsEnabled 
-                ? (val) => setState(() => _vibrationEnabled = val) 
-                : null, // Bloqueado si no hay notificaciones
+                ? (val) => _toggleVibration(val) // <--- USAMOS LA NUEVA FUNCIÓN
+                : null,
           ),
 
           const Divider(),
@@ -112,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const Divider(),
 
-          // --- SECCIÓN NUEVA: CUENTA (MOVIDA DESDE PERFIL) ---
+          // --- SECCIÓN: CUENTA ---
           _buildHeader("Cuenta"),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
@@ -121,10 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)
             ),
             subtitle: const Text("Se cerrará tu sesión actual"),
-            onTap: () async {
-              // Diálogo de confirmación antes de salir
-              _showLogoutDialog(context);
-            },
+            onTap: () => _showLogoutDialog(context),
           ),
           
           const SizedBox(height: 30),
@@ -137,7 +163,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Helper para no repetir código de los encabezados
   Widget _buildHeader(String title) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -148,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -161,16 +186,8 @@ void _showLogoutDialog(BuildContext context) {
           ),
           TextButton(
             onPressed: () async {
-              // 1. Cerramos el diálogo
               Navigator.pop(context);
-
-              // 2. Limpiamos TODA la pila de navegación hasta la raíz.
-              // Esto quita la pantalla de Ajustes y nos deja en la Home.
               Navigator.of(context).popUntil((route) => route.isFirst);
-
-              // 3. Ahora cerramos sesión. 
-              // Como ya no hay nada encima, el StreamBuilder del main
-              // cambiará la Home por el Login y lo verás al instante.
               await FirebaseAuth.instance.signOut();
             },
             child: const Text("Sí, salir", style: TextStyle(color: Colors.red)),
