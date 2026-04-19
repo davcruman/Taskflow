@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../ui/providers/ui_provider.dart';
+import '../utils/app_logger.dart'; // Importante para que funcione el onTap
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -30,6 +31,18 @@ class SettingsScreen extends StatelessWidget {
             padding: EdgeInsets.all(16.0),
             child: Text("Idioma", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
           ),
+          // --- NUEVO LISTTILE AÑADIDO ---
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: const Text("Idioma"),
+            subtitle: const Text("Español (España)"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: () {
+              // Aquí iría la lógica de cambio de idioma
+              AppLogger.i("Cambiando idioma..."); 
+            },
+          ),
+          // ------------------------------
           RadioListTile<String>(
             title: const Text("Español"),
             value: 'es',

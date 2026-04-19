@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../models/task_model.dart';
-import '../../repositories/task_repository.dart'; // Importamos tu repositorio
+import '../../repositories/task_repository.dart';
 
 class TaskItem extends StatelessWidget {
   final Task task;
-  const TaskItem({super.key, required this.task});
+  final VoidCallback? onTap; 
+  final VoidCallback? onLongPress;
+
+  const TaskItem({
+    super.key, 
+    required this.task, 
+    this.onTap, 
+    this.onLongPress
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 1. Envolvemos todo en un Dismissible para poder borrar deslizando
     return Dismissible(
       key: Key(task.id),
-      direction: DismissDirection.endToStart, // Solo deslizar de derecha a izquierda
+      direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 30),
@@ -24,9 +31,22 @@ class TaskItem extends StatelessWidget {
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
-      // Misión de Persona B: Borrar de la base de datos real
       onDismissed: (direction) {
         TaskRepository().deleteTask(task.id);
+        
+        // Feedback inmediato al usuario
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Tarea '${task.title}' eliminada"),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: "OK",
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
@@ -44,10 +64,8 @@ class TaskItem extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: ListTile(
-            onTap: () {
-              // Misión de Persona B: Cambiar estado completado en Firebase
-              TaskRepository().toggleTaskStatus(task.id, task.isCompleted);
-            },
+            onTap: onTap, 
+            onLongPress: onLongPress, 
             contentPadding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
             leading: Container(
               width: 4,
@@ -72,12 +90,27 @@ class TaskItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: isDark ? Colors.white54 : Colors.black45),
             ),
-            trailing: Icon(
-              task.isCompleted 
-                  ? Icons.check_circle 
-                  : (task.priority == TaskPriority.alta ? Icons.circle : Icons.circle_outlined),
-              color: task.color,
-              size: 20,
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Icon(
+                  task.isCompleted 
+                      ? Icons.check_circle 
+                      : (task.priority == TaskPriority.alta ? Icons.circle : Icons.circle_outlined),
+                  color: task.color,
+                  size: 20,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "${task.date.day}/${task.date.month}",
+                  style: TextStyle(
+                    fontSize: 10, 
+                    color: isDark ? Colors.white38 : Colors.black38,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+              ],
             ),
           ),
         ),

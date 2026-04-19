@@ -3,7 +3,10 @@ import '../models/task_model.dart';
 import '../repositories/task_repository.dart'; // Importamos tu motor
 
 class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({super.key});
+  // Añadimos este parámetro opcional
+  final Task? taskToEdit; 
+
+  const AddTaskScreen({super.key, this.taskToEdit});
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
