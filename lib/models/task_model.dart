@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/app_logger.dart'; // <--- Importamos tu utilidad
 
 enum TaskPriority { alta, media, baja }
 
@@ -12,7 +13,7 @@ class Task {
   final Color color;
   bool isCompleted;
   final String userId;
-  final int? reminderMinutes; // <--- NUEVO: Minutos antes para el aviso (puede ser nulo)
+  final int? reminderMinutes;
 
   Task({
     required this.id,
@@ -23,10 +24,9 @@ class Task {
     required this.color,
     this.isCompleted = false,
     required this.userId,
-    this.reminderMinutes, // <--- NUEVO
+    this.reminderMinutes,
   });
 
-  // --- Método copyWith actualizado para incluir recordatorios ---
   Task copyWith({
     String? title,
     String? description,
@@ -34,7 +34,7 @@ class Task {
     TaskPriority? priority,
     Color? color,
     bool? isCompleted,
-    int? reminderMinutes, // <--- NUEVO
+    int? reminderMinutes,
   }) {
     return Task(
       id: id,
@@ -45,12 +45,15 @@ class Task {
       color: color ?? this.color,
       isCompleted: isCompleted ?? this.isCompleted,
       userId: userId,
-      reminderMinutes: reminderMinutes ?? this.reminderMinutes, // <--- NUEVO
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
     );
   }
 
-  // 1. De "Task" a "Mapa" (Para guardar en Firestore)
+  // --- Map para Firestore ---
   Map<String, dynamic> toMap() {
+    // Logueamos cuando una tarea se está preparando para enviarse
+    AppLogger.i("Convertiendo Tarea '${title}' a Map para Firestore");
+    
     return {
       'title': title,
       'description': description,
@@ -59,24 +62,33 @@ class Task {
       'color': color.value,
       'isCompleted': isCompleted,
       'userId': userId,
-      'reminderMinutes': reminderMinutes, // <--- NUEVO
+      'reminderMinutes': reminderMinutes,
     };
   }
 
-  // 2. De "Snapshot de Firebase" a "Task" (Para leer de Firestore)
+  // --- Factory para leer de Firestore ---
   factory Task.fromSnapshot(DocumentSnapshot snap) {
-    var data = snap.data() as Map<String, dynamic>;
-    
-    return Task(
-      id: snap.id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      date: (data['date'] as Timestamp).toDate(),
-      priority: TaskPriority.values.byName(data['priority'] ?? 'media'),
-      color: Color(data['color'] ?? 0xFF42A5F5),
-      isCompleted: data['isCompleted'] ?? false,
-      userId: data['userId'] ?? '',
-      reminderMinutes: data['reminderMinutes'], // <--- NUEVO
-    );
+    try {
+      var data = snap.data() as Map<String, dynamic>;
+      
+      // Log informativo para saber qué ID de documento estamos leyendo
+      AppLogger.i("Procesando documento de Firebase ID: ${snap.id}");
+
+      return Task(
+        id: snap.id,
+        title: data['title'] ?? '',
+        description: data['description'] ?? '',
+        date: (data['date'] as Timestamp).toDate(),
+        priority: TaskPriority.values.byName(data['priority'] ?? 'media'),
+        color: Color(data['color'] ?? 0xFF42A5F5),
+        isCompleted: data['isCompleted'] ?? false,
+        userId: data['userId'] ?? '',
+        reminderMinutes: data['reminderMinutes'],
+      );
+    } catch (e, stackTrace) {
+      // Si falla la conversión (ej: un campo viene con tipo equivocado), el Logger nos dirá dónde
+      AppLogger.e("Error fatal al convertir Snapshot a Task. ID: ${snap.id}", e, stackTrace);
+      rethrow; // Lanzamos el error para que el servicio también se entere
+    }
   }
 }

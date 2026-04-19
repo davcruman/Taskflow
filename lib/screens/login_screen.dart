@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../utils/app_logger.dart'; // <--- IMPORTANTE
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    AppLogger.i("Pantalla de Login cargada");
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -25,35 +32,50 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Log de validación previa
+    if (!_formKey.currentState!.validate()) {
+      AppLogger.w("Intento de envío de formulario inválido");
+      return;
+    }
 
     setState(() => isLoading = true);
     String? error;
 
-    if (isLogin) {
-      error = await _authService.iniciarSesion(_emailController.text, _passwordController.text);
-    } else {
-      error = await _authService.registrar(_emailController.text, _passwordController.text);
-      if (error == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("¡Registro completado! 🎉"), backgroundColor: Colors.green),
-        );
+    final action = isLogin ? "LOGIN" : "REGISTRO";
+    AppLogger.i("Iniciando proceso de $action para: ${_emailController.text}");
+
+    try {
+      if (isLogin) {
+        error = await _authService.iniciarSesion(_emailController.text, _passwordController.text);
+      } else {
+        error = await _authService.registrar(_emailController.text, _passwordController.text);
+        if (error == null && mounted) {
+          AppLogger.i("Registro exitoso, mostrando SnackBar");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("¡Registro completado! 🎉"), backgroundColor: Colors.green),
+          );
+        }
       }
+    } catch (e, stack) {
+      error = "Error inesperado en la interfaz";
+      AppLogger.e("Excepción capturada en LoginScreen._submit", e, stack);
     }
 
     if (mounted) {
       setState(() => isLoading = false);
       if (error != null) {
+        AppLogger.w("El proceso de $action falló: $error");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error), backgroundColor: Colors.red),
         );
+      } else {
+        AppLogger.i("$action completado con éxito");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // --- DETECTAMOS SI ESTAMOS EN MODO OSCURO ---
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -65,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // --- CAMBIO AQUÍ: El color cambia según el modo ---
                 Icon(
                   Icons.task_alt, 
                   size: 100, 
@@ -101,7 +122,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => setState(() => isLogin = !isLogin),
+                  onPressed: () {
+                    setState(() => isLogin = !isLogin);
+                    AppLogger.i("Usuario cambió modo de pantalla a: ${isLogin ? 'Login' : 'Registro'}");
+                  },
                   child: Text(isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"),
                 ),
               ],
