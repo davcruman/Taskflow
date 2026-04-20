@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
+import '../services/notification_service.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final Task? taskToEdit;
@@ -156,6 +157,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   if (_formKey.currentState!.validate()) {
                     final DateTime fullTaskDate = _getCombinedDateTime();
 
+                    // 1. Lógica de Firebase
                     if (isEditing) {
                       final updatedTask = widget.taskToEdit!.copyWith(
                         title: _titleController.text,
@@ -176,6 +178,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         reminderMinutes: _selectedReminder,
                       );
                     }
+
+                    // 2. Lógica de Notificación Programada
+                    if (_selectedReminder != null) {
+                      final DateTime reminderTime = fullTaskDate.subtract(Duration(minutes: _selectedReminder!));
+                      
+                      if (reminderTime.isAfter(DateTime.now())) {
+                        // ID único para la notificación
+                        final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+
+                        await NotificationService.scheduleNotification(
+                          id: notificationId,
+                          title: '⏰ Recordatorio: ${_titleController.text}',
+                          body: 'Faltan $_selectedReminder minutos para tu tarea.',
+                          scheduledDate: reminderTime,
+                        );
+                      }
+                    }
+
                     if (mounted) Navigator.pop(context);
                   }
                 },

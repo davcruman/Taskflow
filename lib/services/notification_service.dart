@@ -1,4 +1,5 @@
 import 'dart:typed_data'; 
+import 'package:flutter/foundation.dart'; // Para debugPrint
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -16,9 +17,18 @@ class NotificationService {
       android: androidSettings,
     );
 
+    // CORRECCIÓN: Se debe usar el argumento nombrado 'settings'
     await _notifications.initialize(
       settings: initSettings, 
     );
+
+    // Solicitar permisos para Android 13+
+    final androidImplementation = _notifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImplementation != null) {
+      await androidImplementation.requestNotificationsPermission();
+      await androidImplementation.requestExactAlarmsPermission();
+    }
   }
 
   static Future<void> scheduleNotification({
@@ -28,6 +38,12 @@ class NotificationService {
     required DateTime scheduledDate,
     bool enableVibration = true,
   }) async {
+    // Verificamos que la fecha sea futura
+    if (scheduledDate.isBefore(DateTime.now())) {
+      debugPrint("⚠️ La fecha de notificación es pasada, no se programa.");
+      return;
+    }
+
     await _notifications.zonedSchedule(
       id: id,
       title: title,
@@ -35,27 +51,25 @@ class NotificationService {
       scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'task_channel',
+          'task_channel_id',
           'Tareas',
-          channelDescription: 'Notificaciones de tareas pendientes',
+          channelDescription: 'Notificaciones de tareas de TaskFlow',
           importance: Importance.max,
           priority: Priority.high,
           enableVibration: enableVibration,
-          // SOLUCIÓN AL ERROR DE Int64List:
           vibrationPattern: enableVibration 
               ? Int64List.fromList([0, 500, 200, 500]) 
               : null,
         ),
       ),
-      // SOLUCIÓN AL ERROR DE uiLocalNotificationDateInterpretation:
-      // En la v20 se usa esta propiedad:
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      // NOTA: En las versiones más nuevas, uiLocalNotificationDateInterpretation 
+      // ha sido eliminado o ya no es un parámetro nombrado en este método.
     );
+    debugPrint("🚀 Notificación programada con éxito para: $scheduledDate");
   }
 
   static Future<void> showInstantNotification() async {
-    // SOLUCIÓN A LOS POSITIONAL ARGUMENTS: 
-    // En la v20, todos los argumentos de .show deben ser NOMBRADOS
     await _notifications.show(
       id: 999, 
       title: '¡Funciona!', 
