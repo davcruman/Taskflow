@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../ui/providers/ui_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -30,7 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     super.dispose();
   }
 
-  // Detecta cuando el usuario vuelve de los ajustes del sistema
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -51,19 +49,18 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       final granted = await android?.requestNotificationsPermission();
       
-      setState(() => _notificationsEnabled = granted ?? false);
+      if (mounted) setState(() => _notificationsEnabled = granted ?? false);
 
       if (granted == false && mounted) {
-        // Si el usuario deniega, le ofrecemos ir a los ajustes del sistema
         _showPermissionDeniedDialog();
       }
     } else {
-      // Si el usuario quiere desactivar, le informamos que debe hacerlo en ajustes del sistema
       await AppSettings.openAppSettings(type: AppSettingsType.notification);
     }
   }
 
   void _showPermissionDeniedDialog() {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -86,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     final uiProvider = Provider.of<UIProvider>(context);
+    final currentLocale = context.locale.languageCode;
 
     return Scaffold(
       appBar: AppBar(title: Text("ajustes".tr())),
@@ -116,43 +114,27 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           ),
           const Divider(),
           _buildHeader("idioma".tr()),
-          RadioListTile<String>(
-            title: Text("espanol".tr()),
-            value: 'es',
-            groupValue: context.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!, context),
-          ),
-          RadioListTile<String>(
-            title: Text("ingles".tr()),
-            value: 'en',
-            groupValue: context.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!, context),
-          ),
-          RadioListTile<String>(
-            title: Text("frances".tr()),
-            value: 'fr',
-            groupValue: context.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!, context),
-          ),
-          RadioListTile<String>(
-            title: Text("portugues".tr()),
-            value: 'pt',
-            groupValue: context.locale.languageCode,
-            onChanged: (value) => uiProvider.setLanguage(value!, context),
-          ),
+          _buildLanguageOption("es", "espanol".tr(), currentLocale, uiProvider),
+          _buildLanguageOption("en", "ingles".tr(), currentLocale, uiProvider),
+          _buildLanguageOption("fr", "frances".tr(), currentLocale, uiProvider),
+          _buildLanguageOption("pt", "portugues".tr(), currentLocale, uiProvider),
           const Divider(),
           _buildHeader("cuenta".tr()),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
             title: Text("cerrar_sesion".tr(), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-            subtitle: Text("subtitulo_cerrar_sesion".tr()),
-            onTap: () => _showLogoutDialog(context),
+            onTap: () => _showLogoutDialog(),
           ),
-          const SizedBox(height: 30),
-          Center(child: Text("version".tr(args: ['1.0.0']), style: const TextStyle(color: Colors.grey))),
-          const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildLanguageOption(String code, String label, String current, UIProvider provider) {
+    return ListTile(
+      title: Text(label),
+      leading: Icon(current == code ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+      onTap: () => provider.setLanguage(code, context),
     );
   }
 
@@ -163,9 +145,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog() {
+    // 1. Capturamos el contexto localmente para evitar el Async Gap
+    final BuildContext dialogContext = context;
+    
     showDialog(
-      context: context,
+      context: dialogContext,
       builder: (context) => AlertDialog(
         title: Text("cerrar_sesion".tr()),
         content: Text("seguro_salir".tr()),
@@ -173,10 +158,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           TextButton(onPressed: () => Navigator.pop(context), child: Text("cancelar".tr())),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              await FirebaseAuth.instance.signOut();
+              final auth = FirebaseAuth.instance;
+              await auth.signOut();
+              
+              // 2. Comprobamos 'mounted' antes de usar la referencia del contexto capturado
               if (mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(dialogContext).popUntil((route) => route.isFirst);
               }
             },
             child: Text("si_salir".tr(), style: const TextStyle(color: Colors.red)),

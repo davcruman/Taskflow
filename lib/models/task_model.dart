@@ -52,14 +52,14 @@ class Task {
   // --- Map para Firestore ---
   Map<String, dynamic> toMap() {
     // Logueamos cuando una tarea se está preparando para enviarse
-    AppLogger.i("Convertiendo Tarea '${title}' a Map para Firestore");
+    AppLogger.i("Convertiendo Tarea '$title' a Map para Firestore");
     
     return {
       'title': title,
       'description': description,
       'date': date,
       'priority': priority.name,
-      'color': color.value,
+      'color': color.toARGB32(),
       'isCompleted': isCompleted,
       'userId': userId,
       'reminderMinutes': reminderMinutes,

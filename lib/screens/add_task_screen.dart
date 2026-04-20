@@ -117,11 +117,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 20),
               Text("recordatorio".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int?>(
-                value: _selectedReminder,
+                initialValue: _selectedReminder,
                 isExpanded: true,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                  fillColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                 ),
                 items: _reminderOptions.map((opt) => DropdownMenuItem<int?>(value: opt['value'], child: Text(opt['label']))).toList(),
@@ -134,7 +134,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     child: ListTile(
                       title: Text("fecha".tr(), style: const TextStyle(fontSize: 12)),
                       subtitle: Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}"),
-                      tileColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                      tileColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
                       onTap: _presentDatePicker,
                     ),
                   ),
@@ -143,7 +143,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     child: ListTile(
                       title: Text("hora".tr(), style: const TextStyle(fontSize: 12)),
                       subtitle: Text(_selectedTime.format(context)),
-                      tileColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                      tileColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
                       onTap: _presentTimePicker,
                     ),
                   ),

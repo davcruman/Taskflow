@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:easy_localization/easy_localization.dart'; // Importante
+import 'package:easy_localization/easy_localization.dart';
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 import '../ui/widgets/task_item.dart';
@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String searchQuery = "";
-  String filterType = "Todas"; // Esta es la clave interna (no traducir)
+  String filterType = "Todas";
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       hintText: "buscar_tareas".tr(),
                       prefixIcon: const Icon(Icons.search, size: 20),
                       filled: true,
-                      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                      fillColor: isDark ? Colors.white.withValues(alpha:0.05) : Colors.black.withValues(alpha : 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                     ),
                   ),
@@ -81,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       children: ["Todas", "Pendientes", "Completadas"].map((filter) {
                         bool isSelected = filterType == filter;
-                        // Traducimos solo la etiqueta que ve el usuario
                         String label = filter.toLowerCase().tr(); 
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
@@ -114,8 +113,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (filterType == "Completadas") matchesStatus = task.isCompleted;
                         return matchesSearch && matchesStatus;
                       }).toList();
+                      
                       if (filteredTasks.isEmpty) return Center(child: Text("sin_tareas".tr(), style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)));
-                      return Column(children: filteredTasks.map((t) => TaskItem(task: t, onTap: () {})).toList());
+                      
+                      // AQUÍ REALIZAMOS EL CAMBIO PARA LA EDICIÓN:
+                      return Column(
+                        children: filteredTasks.map((t) => TaskItem(
+                          task: t, 
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddTaskScreen(taskToEdit: t),
+                              ),
+                            );
+                          }
+                        )).toList()
+                      );
                     },
                   ),
                 ],
