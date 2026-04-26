@@ -106,12 +106,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             value: _notificationsEnabled,
             onChanged: (val) => _handleNotificationPermission(val),
           ),
-          SwitchListTile(
-            secondary: const Icon(Icons.vibration),
-            title: Text("vibracion".tr()),
-            value: uiProvider.vibrationEnabled,
-            onChanged: _notificationsEnabled ? (val) => uiProvider.toggleVibration(val) : null,
-          ),
           const Divider(),
           _buildHeader("idioma".tr()),
           _buildLanguageOption("es", "espanol".tr(), currentLocale, uiProvider),
@@ -146,7 +140,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   }
 
   void _showLogoutDialog() {
-    // 1. Capturamos el contexto localmente para evitar el Async Gap
     final BuildContext dialogContext = context;
     
     showDialog(
@@ -161,7 +154,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               final auth = FirebaseAuth.instance;
               await auth.signOut();
               
-              // 2. Comprobamos 'mounted' antes de usar la referencia del contexto capturado
               if (mounted) {
                 Navigator.of(dialogContext).popUntil((route) => route.isFirst);
               }
