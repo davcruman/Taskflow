@@ -1,8 +1,11 @@
+import 'dart:async'; // <--- NECESARIO para StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:connectivity_plus/connectivity_plus.dart'; // <--- IMPORTANTE
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 import '../services/notification_service.dart';
+import '../utils/app_logger.dart'; // <--- Tus loggers
 
 class AddTaskScreen extends StatefulWidget {
   final Task? taskToEdit;
@@ -23,6 +26,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   late bool isEditing;
   int? _selectedReminder;
 
+  // --- LÓGICA DE CONEXIÓN ---
+  bool _isConnected = true;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
   List<Map<String, dynamic>> get _reminderOptions => [
     {'label': 'sin_recordatorio'.tr(), 'value': null},
     {'label': 'min_5_antes'.tr(), 'value': 5},
@@ -34,6 +41,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
+    AppLogger.i("Iniciando AddTaskScreen");
     isEditing = widget.taskToEdit != null;
     _titleController = TextEditingController(text: widget.taskToEdit?.title ?? '');
     _descController = TextEditingController(text: widget.taskToEdit?.description ?? '');
@@ -41,15 +49,36 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _selectedTime = widget.taskToEdit != null ? TimeOfDay.fromDateTime(widget.taskToEdit!.date) : TimeOfDay.now();
     _selectedPriority = widget.taskToEdit?.priority ?? TaskPriority.media;
     _selectedReminder = widget.taskToEdit?.reminderMinutes;
+
+    // Iniciar escucha de conexión
+    _checkInitialConnection();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      final connected = !results.contains(ConnectivityResult.none);
+      if (connected != _isConnected) {
+        setState(() => _isConnected = connected);
+        connected 
+          ? AppLogger.i("🌐 Conexión restaurada") 
+          : AppLogger.w("📴 Modo avión o sin conexión detectado");
+      }
+    });
   }
 
-  String _getPriorityTranslation(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.alta: return "prio_alta".tr();
-      case TaskPriority.media: return "prio_media".tr();
-      case TaskPriority.baja: return "prio_baja".tr();
-    }
+  Future<void> _checkInitialConnection() async {
+    final result = await Connectivity().checkConnectivity();
+    setState(() => _isConnected = !result.contains(ConnectivityResult.none));
   }
+
+  @override
+  void dispose() {
+    AppLogger.i("Cerrando AddTaskScreen y cancelando suscripciones");
+    _titleController.dispose();
+    _descController.dispose();
+    _connectivitySubscription.cancel(); // <--- EVITA FUGAS DE MEMORIA
+    super.dispose();
+  }
+
+  // --- MÉTODOS DE APOYO (Igual que antes) ---
+  String _getPriorityTranslation(TaskPriority priority) => "prio_${priority.name}".tr();
 
   void _presentDatePicker() async {
     final pickedDate = await showDatePicker(
@@ -58,20 +87,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    if (pickedDate != null) setState(() => _selectedDate = pickedDate);
+    if (pickedDate != null) {
+      setState(() => _selectedDate = pickedDate);
+      AppLogger.i("Fecha seleccionada: $pickedDate");
+    }
   }
 
   void _presentTimePicker() async {
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (pickedTime != null) setState(() => _selectedTime = pickedTime);
+    final pickedTime = await showTimePicker(context: context, initialTime: _selectedTime);
+    if (pickedTime != null) {
+      setState(() => _selectedTime = pickedTime);
+      AppLogger.i("Hora seleccionada: ${pickedTime.format(context)}");
+    }
   }
 
-  DateTime _getCombinedDateTime() {
-    return DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
-  }
+  DateTime _getCombinedDateTime() => DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
 
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
@@ -109,10 +139,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               DropdownButton<TaskPriority>(
                 value: _selectedPriority,
                 isExpanded: true,
-                items: TaskPriority.values.map((p) => DropdownMenuItem(
-                  value: p, 
-                  child: Text(_getPriorityTranslation(p))
-                )).toList(),
+                items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(_getPriorityTranslation(p)))).toList(),
                 onChanged: (val) => setState(() => _selectedPriority = val!),
               ),
               const SizedBox(height: 20),
@@ -151,13 +178,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ],
               ),
               const SizedBox(height: 40),
+
+              // --- BOTÓN CON CONTROL DE CONEXIÓN ---
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: isDark ? Colors.white : Colors.black),
-                onPressed: () async {
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isConnected 
+                      ? (isDark ? Colors.white : Colors.black)
+                      : Colors.grey, // Gris si no hay internet
+                ),
+                onPressed: _isConnected ? () async {
                   if (_formKey.currentState!.validate()) {
                     final DateTime fullTaskDate = _getCombinedDateTime();
+                    AppLogger.i("Guardando tarea...");
 
-                    // 1. Lógica de Firebase
                     if (isEditing) {
                       final updatedTask = widget.taskToEdit!.copyWith(
                         title: _titleController.text,
@@ -179,14 +212,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       );
                     }
 
-                    // 2. Lógica de Notificación Programada
                     if (_selectedReminder != null) {
                       final DateTime reminderTime = fullTaskDate.subtract(Duration(minutes: _selectedReminder!));
-                      
                       if (reminderTime.isAfter(DateTime.now())) {
-                        // ID único para la notificación
                         final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-
                         await NotificationService.scheduleNotification(
                           id: notificationId,
                           title: '⏰ Recordatorio: ${_titleController.text}',
@@ -198,9 +227,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                     if (mounted) Navigator.pop(context);
                   }
+                } : () {
+                  // Si el usuario consigue pulsar estando desactivado (raro, pero por seguridad)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("No hay conexión. No se puede guardar."), backgroundColor: Colors.orange),
+                  );
                 },
                 child: Text(
-                  isEditing ? "guardar_cambios".tr() : "crear_tarea".tr(),
+                  !_isConnected 
+                    ? "Sin conexión ☁️" // Mensaje si no hay internet
+                    : (isEditing ? "guardar_cambios".tr() : "crear_tarea".tr()),
                   style: TextStyle(color: isDark ? Colors.black : Colors.white)
                 ),
               ),

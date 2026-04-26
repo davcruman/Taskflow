@@ -21,13 +21,14 @@ dependencies:
   timezone: ^0.10.1
   table_calendar: ^3.2.0
   flutter_timezone: ^5.0.2
-  flutter_dotenv: ^5.1.0
+  flutter_dotenv: ^6.0.1
   
   # Dependencias para idiomas, ajustes y persistencia
   easy_localization: ^3.0.7
-  app_settings: ^6.0.0
+  app_settings: ^7.0.0
   shared_preferences: ^2.2.2
   intl: 0.20.2 # Necesaria para el calendario y formatos de fecha
+  connectivity_plus: ^7.1.1
 
 dev_dependencies:
   flutter_test:
@@ -37,7 +38,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Configuración de assets para las traducciones JSON
+  
   assets:
     - .env.dev
-    - assets/translations/
+    - assets/translations/  
