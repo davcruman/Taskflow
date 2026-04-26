@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final Color bg = isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F7);
     
     final taskRepo = TaskRepository();
+    // Nota: Aunque ya no mostramos el nombre, mantenemos la lógica por si la necesitas luego
     final user = FirebaseAuth.instance.currentUser;
     final String name = user?.displayName ?? "Usuario";
 
@@ -60,11 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "hola".tr(namedArgs: {'name': name}),
-                    style: TextStyle(fontSize: 15, color: isDark ? Colors.white54 : Colors.black45),
-                  ),
-                  const SizedBox(height: 20),
+                  // MENSAJE ELIMINADO AQUÍ
+                  const SizedBox(height: 10), // Ajuste de margen superior para el buscador
                   TextField(
                     onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
                     decoration: InputDecoration(
@@ -116,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       
                       if (filteredTasks.isEmpty) return Center(child: Text("sin_tareas".tr(), style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)));
                       
-                      // AQUÍ REALIZAMOS EL CAMBIO PARA LA EDICIÓN:
                       return Column(
                         children: filteredTasks.map((t) => TaskItem(
                           task: t, 
