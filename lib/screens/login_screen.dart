@@ -13,7 +13,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
   final AuthService _authService = AuthService();
 
   bool isLogin = true;
@@ -23,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -66,14 +64,20 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (isLogin) {
         error = await _authService.iniciarSesion(
-          _emailController.text,
+          _emailController.text.trim(),
           _passwordController.text,
         );
+        
+        // --- SOLUCIÓN PUNTO 1: Personalizar el error de Firebase ---
+        if (error != null && error.contains("invalid-credential")) {
+          error = "El correo o contraseña es incorrecto, inténtalo de nuevo";
+        }
       } else {
+        // --- SOLUCIÓN PUNTO 2: Quitamos el nameController y mandamos texto vacío ---
         error = await _authService.registrar(
-          _emailController.text,
+          _emailController.text.trim(),
           _passwordController.text,
-          _nameController.text,
+          "", 
         );
       }
     } catch (e) {
@@ -117,31 +121,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 25),
 
-                // --- CAMPO NOMBRE (Con capitalización de palabras) ---
-                if (!isLogin) ...[
-                  TextFormField(
-                    controller: _nameController,
-                    textCapitalization: TextCapitalization
-                        .words, // Ej: "juan perez" -> "Juan Perez"
-                    decoration: const InputDecoration(
-                      labelText: "Nombre Completo",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? "Dinos tu nombre"
-                        : null,
-                  ),
-                  const SizedBox(height: 15),
-                ],
+                // --- CAMPO NOMBRE ELIMINADO ---
 
-                // --- EMAIL (Sin mayúsculas automáticas) ---
+                // --- EMAIL ---
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
-                  textCapitalization: TextCapitalization
-                      .none, // <--- Evita la mayúscula inicial
+                  textCapitalization: TextCapitalization.none,
                   decoration: const InputDecoration(
                     labelText: "Email",
                     border: OutlineInputBorder(),
@@ -158,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // --- CONTRASEÑA COMPLEJA (Problema 3) ---
+                // --- CONTRASEÑA ---
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -168,16 +155,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.lock),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return "Escribe una contraseña";
-
-                    // Al menos 8 caracteres, una mayúscula y un número
-                    final passwordRegex = RegExp(
-                      r'^(?=.*[A-Z])(?=.*[0-9]).{8,}$',
-                    );
-                    if (!passwordRegex.hasMatch(value)) {
-                      return "Usa 8+ caracteres, una mayúscula y un número";
                     }
+
+                    if (!isLogin) {
+                      final passwordRegex = RegExp(
+                        r'^(?=.*[A-Z])(?=.*[0-9]).{8,}$',
+                      );
+                      if (!passwordRegex.hasMatch(value)) {
+                        return "Usa 8+ caracteres, una mayúscula y un número";
+                      }
+                    }
+                    
                     return null;
                   },
                 ),

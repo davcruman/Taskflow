@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
@@ -25,9 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final Color bg = isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F7);
 
     final taskRepo = TaskRepository();
-    // Nota: Aunque ya no mostramos el nombre, mantenemos la lógica por si la necesitas luego
-    final user = FirebaseAuth.instance.currentUser;
-    final String name = user?.displayName ?? "Usuario";
 
     return Scaffold(
       backgroundColor: bg,
