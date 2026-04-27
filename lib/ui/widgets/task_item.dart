@@ -7,12 +7,7 @@ class TaskItem extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  const TaskItem({
-    super.key,
-    required this.task,
-    this.onTap,
-    this.onLongPress,
-  });
+  const TaskItem({super.key, required this.task, this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +17,7 @@ class TaskItem extends StatelessWidget {
       key: Key(task.id),
       // Permitimos ambas direcciones
       direction: DismissDirection.horizontal,
-      
+
       // Fondo al deslizar a la DERECHA (Completar)
       background: Container(
         alignment: Alignment.centerLeft,
@@ -32,7 +27,11 @@ class TaskItem extends StatelessWidget {
           color: Colors.green,
           borderRadius: BorderRadius.circular(30),
         ),
-        child: const Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
+        child: const Icon(
+          Icons.check_circle_outline,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
 
       // Fondo al deslizar a la IZQUIERDA (Borrar)
@@ -55,14 +54,17 @@ class TaskItem extends StatelessWidget {
           return false; // Retornamos false para que la tarjeta vuelva a su sitio
         } else {
           // Si desliza a la izquierda, borramos
-          return true; 
+          return true;
         }
       },
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
           TaskRepository().deleteTask(task.id);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Tarea '${task.title}' eliminada"), behavior: SnackBarBehavior.floating),
+            SnackBar(
+              content: Text("Tarea '${task.title}' eliminada"),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       },
@@ -73,7 +75,7 @@ class TaskItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -82,9 +84,13 @@ class TaskItem extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: ListTile(
-            onTap: onTap, // Ahora esto llevará a editar (se configura en HomeScreen)
+            onTap:
+                onTap, // Ahora esto llevará a editar (se configura en HomeScreen)
             onLongPress: onLongPress,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 25,
+              vertical: 10,
+            ),
             leading: Container(
               width: 4,
               height: 40,
@@ -99,7 +105,9 @@ class TaskItem extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
                 color: isDark ? Colors.white : const Color(0xFF2D2D2D),
-                decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                decoration: task.isCompleted
+                    ? TextDecoration.lineThrough
+                    : null,
               ),
             ),
             subtitle: Text(
@@ -113,16 +121,21 @@ class TaskItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Icon(
-                  task.isCompleted 
-                      ? Icons.check_circle 
-                      : (task.priority == TaskPriority.alta ? Icons.circle : Icons.circle_outlined),
+                  task.isCompleted
+                      ? Icons.check_circle
+                      : (task.priority == TaskPriority.alta
+                            ? Icons.circle
+                            : Icons.circle_outlined),
                   color: task.color,
                   size: 20,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "${task.date.day}/${task.date.month}",
-                  style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
                 ),
               ],
             ),

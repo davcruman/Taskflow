@@ -53,7 +53,7 @@ class Task {
   Map<String, dynamic> toMap() {
     // Logueamos cuando una tarea se está preparando para enviarse
     AppLogger.i("Convertiendo Tarea '$title' a Map para Firestore");
-    
+
     return {
       'title': title,
       'description': description,
@@ -70,7 +70,7 @@ class Task {
   factory Task.fromSnapshot(DocumentSnapshot snap) {
     try {
       var data = snap.data() as Map<String, dynamic>;
-      
+
       // Log informativo para saber qué ID de documento estamos leyendo
       AppLogger.i("Procesando documento de Firebase ID: ${snap.id}");
 
@@ -87,7 +87,11 @@ class Task {
       );
     } catch (e, stackTrace) {
       // Si falla la conversión (ej: un campo viene con tipo equivocado), el Logger nos dirá dónde
-      AppLogger.e("Error fatal al convertir Snapshot a Task. ID: ${snap.id}", e, stackTrace);
+      AppLogger.e(
+        "Error fatal al convertir Snapshot a Task. ID: ${snap.id}",
+        e,
+        stackTrace,
+      );
       rethrow; // Lanzamos el error para que el servicio también se entere
     }
   }

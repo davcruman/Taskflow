@@ -1,16 +1,17 @@
-import 'dart:typed_data'; 
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart'; // Para debugPrint
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
     tz.initializeTimeZones();
-    
-    const AndroidInitializationSettings androidSettings = 
+
+    const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initSettings = InitializationSettings(
@@ -18,13 +19,13 @@ class NotificationService {
     );
 
     // CORRECCIÓN: Se debe usar el argumento nombrado 'settings'
-    await _notifications.initialize(
-      settings: initSettings, 
-    );
+    await _notifications.initialize(settings: initSettings);
 
     // Solicitar permisos para Android 13+
-    final androidImplementation = _notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidImplementation = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidImplementation != null) {
       await androidImplementation.requestNotificationsPermission();
       await androidImplementation.requestExactAlarmsPermission();
@@ -57,13 +58,13 @@ class NotificationService {
           importance: Importance.max,
           priority: Priority.high,
           enableVibration: enableVibration,
-          vibrationPattern: enableVibration 
-              ? Int64List.fromList([0, 500, 200, 500]) 
+          vibrationPattern: enableVibration
+              ? Int64List.fromList([0, 500, 200, 500])
               : null,
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      // NOTA: En las versiones más nuevas, uiLocalNotificationDateInterpretation 
+      // NOTA: En las versiones más nuevas, uiLocalNotificationDateInterpretation
       // ha sido eliminado o ya no es un parámetro nombrado en este método.
     );
     debugPrint("🚀 Notificación programada con éxito para: $scheduledDate");
@@ -71,9 +72,9 @@ class NotificationService {
 
   static Future<void> showInstantNotification() async {
     await _notifications.show(
-      id: 999, 
-      title: '¡Funciona!', 
-      body: 'Si el móvil ha vibrado, todo está bien configurado.', 
+      id: 999,
+      title: '¡Funciona!',
+      body: 'Si el móvil ha vibrado, todo está bien configurado.',
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'test_channel',

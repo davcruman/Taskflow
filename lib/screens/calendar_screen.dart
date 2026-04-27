@@ -26,9 +26,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   // Traducción para las etiquetas de prioridad en el diálogo
   String _getPriorityTranslation(TaskPriority priority) {
     switch (priority) {
-      case TaskPriority.alta: return "prio_alta".tr();
-      case TaskPriority.media: return "prio_media".tr();
-      case TaskPriority.baja: return "prio_baja".tr();
+      case TaskPriority.alta:
+        return "prio_alta".tr();
+      case TaskPriority.media:
+        return "prio_media".tr();
+      case TaskPriority.baja:
+        return "prio_baja".tr();
     }
   }
 
@@ -46,25 +49,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           _allTasks = snapshot.data ?? [];
 
           return Column(
             children: [
               TableCalendar(
                 // USA EL IDIOMA ACTUAL DE LA APP
-                locale: context.locale.toString(), 
+                locale: context.locale.toString(),
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
-                calendarFormat: CalendarFormat.month, 
+                calendarFormat: CalendarFormat.month,
                 headerStyle: const HeaderStyle(
-                  formatButtonVisible: false, 
+                  formatButtonVisible: false,
                   titleCentered: true,
                 ),
-                availableCalendarFormats: {
-                  CalendarFormat.month: 'mes'.tr(),
-                },
+                availableCalendarFormats: {CalendarFormat.month: 'mes'.tr()},
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
@@ -73,7 +74,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   });
                 },
                 eventLoader: _getTasksForDay,
-                
+
                 // Marcador personalizado (punto debajo del día)
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
@@ -95,14 +96,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 calendarStyle: const CalendarStyle(
                   markerSize: 0, // Ocultamos los marcadores nativos
-                  todayDecoration: BoxDecoration(color: Colors.black12, shape: BoxShape.circle),
-                  selectedDecoration: BoxDecoration(color: Colors.deepPurple, shape: BoxShape.circle),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.black12,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
               const Divider(),
-              Expanded(
-                child: _buildTaskList(_getTasksForDay(_selectedDay!)),
-              ),
+              Expanded(child: _buildTaskList(_getTasksForDay(_selectedDay!))),
             ],
           );
         },
@@ -116,18 +121,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     return ListView.builder(
-      itemCount: tasks.length, 
+      itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
-        final String hora = "${task.date.hour}:${task.date.minute.toString().padLeft(2, '0')}";
+        final String hora =
+            "${task.date.hour}:${task.date.minute.toString().padLeft(2, '0')}";
 
         return ListTile(
-          leading: Container(width: 12, height: 12, decoration: BoxDecoration(color: task.color, shape: BoxShape.circle)),
-          title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          leading: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: task.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          title: Text(
+            task.title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: Text("${task.description}\n⏰ ${'hora_label'.tr()}: $hora"),
           isThreeLine: task.description.isNotEmpty,
           trailing: Icon(
-            task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+            task.isCompleted
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
             color: task.isCompleted ? Colors.green : Colors.grey,
           ),
           onTap: () => _showTaskDetails(task, hora),
@@ -145,12 +163,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (task.description.isNotEmpty) Text("${'descripcion_label'.tr()}: ${task.description}"),
+            if (task.description.isNotEmpty)
+              Text("${'descripcion_label'.tr()}: ${task.description}"),
             const SizedBox(height: 10),
             // Prioridad traducida
-            Text("${'prioridad_label'.tr()}: ${_getPriorityTranslation(task.priority)}"),
+            Text(
+              "${'prioridad_label'.tr()}: ${_getPriorityTranslation(task.priority)}",
+            ),
             Text("${'hora_label'.tr()}: $hora"),
-            Text("${'fecha_label'.tr()}: ${task.date.day}/${task.date.month}/${task.date.year}"),
+            Text(
+              "${'fecha_label'.tr()}: ${task.date.day}/${task.date.month}/${task.date.year}",
+            ),
           ],
         ),
         actions: [

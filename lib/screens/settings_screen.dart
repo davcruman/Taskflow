@@ -13,7 +13,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _notificationsEnabled = false;
 
   @override
@@ -38,7 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
   Future<void> _checkNotificationPermission() async {
     final plugin = FlutterLocalNotificationsPlugin();
-    final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     final bool? isGranted = await android?.areNotificationsEnabled();
     if (mounted) setState(() => _notificationsEnabled = isGranted ?? false);
   }
@@ -46,9 +50,12 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Future<void> _handleNotificationPermission(bool value) async {
     if (value) {
       final plugin = FlutterLocalNotificationsPlugin();
-      final android = plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      final android = plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       final granted = await android?.requestNotificationsPermission();
-      
+
       if (mounted) setState(() => _notificationsEnabled = granted ?? false);
 
       if (granted == false && mounted) {
@@ -65,9 +72,14 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       context: context,
       builder: (context) => AlertDialog(
         title: Text("notificaciones".tr()),
-        content: const Text("Para activar las notificaciones, por favor habilítalas en los ajustes del sistema."),
+        content: const Text(
+          "Para activar las notificaciones, por favor habilítalas en los ajustes del sistema.",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text("cancelar".tr())),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("cancelar".tr()),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -91,7 +103,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
         children: [
           _buildHeader("apariencia".tr()),
           ListTile(
-            leading: Icon(uiProvider.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+            leading: Icon(
+              uiProvider.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode
+                  : Icons.light_mode,
+            ),
             title: Text("modo_oscuro".tr()),
             trailing: Switch(
               value: uiProvider.themeMode == ThemeMode.dark,
@@ -111,12 +127,23 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           _buildLanguageOption("es", "espanol".tr(), currentLocale, uiProvider),
           _buildLanguageOption("en", "ingles".tr(), currentLocale, uiProvider),
           _buildLanguageOption("fr", "frances".tr(), currentLocale, uiProvider),
-          _buildLanguageOption("pt", "portugues".tr(), currentLocale, uiProvider),
+          _buildLanguageOption(
+            "pt",
+            "portugues".tr(),
+            currentLocale,
+            uiProvider,
+          ),
           const Divider(),
           _buildHeader("cuenta".tr()),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: Text("cerrar_sesion".tr(), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            title: Text(
+              "cerrar_sesion".tr(),
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             onTap: () => _showLogoutDialog(),
           ),
         ],
@@ -124,10 +151,19 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildLanguageOption(String code, String label, String current, UIProvider provider) {
+  Widget _buildLanguageOption(
+    String code,
+    String label,
+    String current,
+    UIProvider provider,
+  ) {
     return ListTile(
       title: Text(label),
-      leading: Icon(current == code ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+      leading: Icon(
+        current == code
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+      ),
       onTap: () => provider.setLanguage(code, context),
     );
   }
@@ -135,30 +171,39 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   Widget _buildHeader(String title) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+      child: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+      ),
     );
   }
 
   void _showLogoutDialog() {
     final BuildContext dialogContext = context;
-    
+
     showDialog(
       context: dialogContext,
       builder: (context) => AlertDialog(
         title: Text("cerrar_sesion".tr()),
         content: Text("seguro_salir".tr()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text("cancelar".tr())),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("cancelar".tr()),
+          ),
           TextButton(
             onPressed: () async {
               final auth = FirebaseAuth.instance;
               await auth.signOut();
-              
+
               if (mounted) {
                 Navigator.of(dialogContext).popUntil((route) => route.isFirst);
               }
             },
-            child: Text("si_salir".tr(), style: const TextStyle(color: Colors.red)),
+            child: Text(
+              "si_salir".tr(),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

@@ -18,17 +18,17 @@ class TaskRepository {
   // 1. LEER TAREAS (Stream en tiempo real)
   Stream<List<Task>> getTasks() {
     AppLogger.i("Iniciando Stream de tareas para el usuario: $_userId");
-    
+
     return _db
         .collection('tasks')
         .where('userId', isEqualTo: _userId)
         .orderBy('date', descending: false)
         .snapshots()
         .map((snapshot) {
-          AppLogger.i("Firestore: Recibidos ${snapshot.docs.length} documentos");
-          return snapshot.docs
-            .map((doc) => Task.fromSnapshot(doc))
-            .toList();
+          AppLogger.i(
+            "Firestore: Recibidos ${snapshot.docs.length} documentos",
+          );
+          return snapshot.docs.map((doc) => Task.fromSnapshot(doc)).toList();
         });
   }
 
@@ -49,7 +49,7 @@ class TaskRepository {
       AppLogger.i("Intentando guardar nueva tarea: '$title'");
 
       final newTask = Task(
-        id: '', 
+        id: '',
         title: title,
         description: description,
         date: date,
@@ -71,11 +71,15 @@ class TaskRepository {
   Future<void> updateTask(Task task) async {
     try {
       AppLogger.i("Actualizando tarea completa: ${task.id} (${task.title})");
-      
+
       await _db.collection('tasks').doc(task.id).update(task.toMap());
       AppLogger.i("✅ Tarea ${task.id} sincronizada con Firestore");
     } catch (e, stackTrace) {
-      AppLogger.e("❌ Error crítico al actualizar tarea ${task.id}", e, stackTrace);
+      AppLogger.e(
+        "❌ Error crítico al actualizar tarea ${task.id}",
+        e,
+        stackTrace,
+      );
       rethrow;
     }
   }
@@ -84,8 +88,10 @@ class TaskRepository {
   Future<void> toggleTaskStatus(String taskId, bool currentStatus) async {
     try {
       final newStatus = !currentStatus;
-      AppLogger.i("Cambiando estado de tarea $taskId a: ${newStatus ? 'Completada' : 'Pendiente'}");
-      
+      AppLogger.i(
+        "Cambiando estado de tarea $taskId a: ${newStatus ? 'Completada' : 'Pendiente'}",
+      );
+
       await _db.collection('tasks').doc(taskId).update({
         'isCompleted': newStatus,
       });
@@ -98,8 +104,10 @@ class TaskRepository {
   // 5. BORRAR TAREA (Delete)
   Future<void> deleteTask(String taskId) async {
     try {
-      AppLogger.w("Eliminando tarea ID: $taskId..."); // Usamos Warning porque es una acción destructiva
-      
+      AppLogger.w(
+        "Eliminando tarea ID: $taskId...",
+      ); // Usamos Warning porque es una acción destructiva
+
       await _db.collection('tasks').doc(taskId).delete();
       AppLogger.i("✅ Tarea $taskId eliminada permanentemente");
     } catch (e, stackTrace) {

@@ -19,7 +19,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descController;
-  
+
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late TaskPriority _selectedPriority;
@@ -43,22 +43,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.initState();
     AppLogger.i("Iniciando AddTaskScreen");
     isEditing = widget.taskToEdit != null;
-    _titleController = TextEditingController(text: widget.taskToEdit?.title ?? '');
-    _descController = TextEditingController(text: widget.taskToEdit?.description ?? '');
+    _titleController = TextEditingController(
+      text: widget.taskToEdit?.title ?? '',
+    );
+    _descController = TextEditingController(
+      text: widget.taskToEdit?.description ?? '',
+    );
     _selectedDate = widget.taskToEdit?.date ?? DateTime.now();
-    _selectedTime = widget.taskToEdit != null ? TimeOfDay.fromDateTime(widget.taskToEdit!.date) : TimeOfDay.now();
+    _selectedTime = widget.taskToEdit != null
+        ? TimeOfDay.fromDateTime(widget.taskToEdit!.date)
+        : TimeOfDay.now();
     _selectedPriority = widget.taskToEdit?.priority ?? TaskPriority.media;
     _selectedReminder = widget.taskToEdit?.reminderMinutes;
 
     // Iniciar escucha de conexión
     _checkInitialConnection();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      List<ConnectivityResult> results,
+    ) {
       final connected = !results.contains(ConnectivityResult.none);
       if (connected != _isConnected) {
         setState(() => _isConnected = connected);
-        connected 
-          ? AppLogger.i("🌐 Conexión restaurada") 
-          : AppLogger.w("📴 Modo avión o sin conexión detectado");
+        connected
+            ? AppLogger.i("🌐 Conexión restaurada")
+            : AppLogger.w("📴 Modo avión o sin conexión detectado");
       }
     });
   }
@@ -78,7 +86,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   // --- MÉTODOS DE APOYO (Igual que antes) ---
-  String _getPriorityTranslation(TaskPriority priority) => "prio_${priority.name}".tr();
+  String _getPriorityTranslation(TaskPriority priority) =>
+      "prio_${priority.name}".tr();
 
   void _presentDatePicker() async {
     final pickedDate = await showDatePicker(
@@ -94,20 +103,32 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   void _presentTimePicker() async {
-    final pickedTime = await showTimePicker(context: context, initialTime: _selectedTime);
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
     if (pickedTime != null) {
       setState(() => _selectedTime = pickedTime);
       AppLogger.i("Hora seleccionada: ${pickedTime.format(context)}");
     }
   }
 
-  DateTime _getCombinedDateTime() => DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
+  DateTime _getCombinedDateTime() => DateTime(
+    _selectedDate.year,
+    _selectedDate.month,
+    _selectedDate.day,
+    _selectedTime.hour,
+    _selectedTime.minute,
+  );
 
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
-      case TaskPriority.alta: return const Color(0xFFE57373);
-      case TaskPriority.media: return const Color(0xFF81C784);
-      case TaskPriority.baja: return const Color(0xFF64B5F6);
+      case TaskPriority.alta:
+        return const Color(0xFFE57373);
+      case TaskPriority.media:
+        return const Color(0xFF81C784);
+      case TaskPriority.baja:
+        return const Color(0xFF64B5F6);
     }
   }
 
@@ -116,7 +137,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? "editar_tarea".tr() : "nueva_tarea".tr())),
+      appBar: AppBar(
+        title: Text(isEditing ? "editar_tarea".tr() : "nueva_tarea".tr()),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -125,34 +148,67 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(labelText: "titulo_task".tr(), border: const OutlineInputBorder()),
-                validator: (value) => (value == null || value.isEmpty) ? "error_titulo".tr() : null,
+                decoration: InputDecoration(
+                  labelText: "titulo_task".tr(),
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? "error_titulo".tr()
+                    : null,
               ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _descController,
                 maxLines: 3,
-                decoration: InputDecoration(labelText: "descripcion_task".tr(), border: const OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: "descripcion_task".tr(),
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 20),
-              Text("prioridad".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                "prioridad".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               DropdownButton<TaskPriority>(
                 value: _selectedPriority,
                 isExpanded: true,
-                items: TaskPriority.values.map((p) => DropdownMenuItem(value: p, child: Text(_getPriorityTranslation(p)))).toList(),
+                items: TaskPriority.values
+                    .map(
+                      (p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(_getPriorityTranslation(p)),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (val) => setState(() => _selectedPriority = val!),
               ),
               const SizedBox(height: 20),
-              Text("recordatorio".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                "recordatorio".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               DropdownButtonFormField<int?>(
                 initialValue: _selectedReminder,
                 isExpanded: true,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                  fillColor: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.grey[200],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                items: _reminderOptions.map((opt) => DropdownMenuItem<int?>(value: opt['value'], child: Text(opt['label']))).toList(),
+                items: _reminderOptions
+                    .map(
+                      (opt) => DropdownMenuItem<int?>(
+                        value: opt['value'],
+                        child: Text(opt['label']),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (val) => setState(() => _selectedReminder = val),
               ),
               const SizedBox(height: 20),
@@ -160,18 +216,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 children: [
                   Expanded(
                     child: ListTile(
-                      title: Text("fecha".tr(), style: const TextStyle(fontSize: 12)),
-                      subtitle: Text("${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}"),
-                      tileColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
+                      title: Text(
+                        "fecha".tr(),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      subtitle: Text(
+                        "${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}",
+                      ),
+                      tileColor: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.grey[200],
                       onTap: _presentDatePicker,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ListTile(
-                      title: Text("hora".tr(), style: const TextStyle(fontSize: 12)),
+                      title: Text(
+                        "hora".tr(),
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       subtitle: Text(_selectedTime.format(context)),
-                      tileColor: isDark ? Colors.white.withValues(alpha : 0.05) : Colors.grey[200],
+                      tileColor: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.grey[200],
                       onTap: _presentTimePicker,
                     ),
                   ),
@@ -182,62 +250,77 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               // --- BOTÓN CON CONTROL DE CONEXIÓN ---
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isConnected 
+                  backgroundColor: _isConnected
                       ? (isDark ? Colors.white : Colors.black)
                       : Colors.grey, // Gris si no hay internet
                 ),
-                onPressed: _isConnected ? () async {
-                  if (_formKey.currentState!.validate()) {
-                    final DateTime fullTaskDate = _getCombinedDateTime();
-                    AppLogger.i("Guardando tarea...");
+                onPressed: _isConnected
+                    ? () async {
+                        if (_formKey.currentState!.validate()) {
+                          final DateTime fullTaskDate = _getCombinedDateTime();
+                          AppLogger.i("Guardando tarea...");
 
-                    if (isEditing) {
-                      final updatedTask = widget.taskToEdit!.copyWith(
-                        title: _titleController.text,
-                        description: _descController.text,
-                        priority: _selectedPriority,
-                        color: _getPriorityColor(_selectedPriority),
-                        date: fullTaskDate,
-                        reminderMinutes: _selectedReminder,
-                      );
-                      await TaskRepository().updateTask(updatedTask);
-                    } else {
-                      await TaskRepository().saveTask(
-                        title: _titleController.text,
-                        description: _descController.text,
-                        priority: _selectedPriority,
-                        color: _getPriorityColor(_selectedPriority),
-                        date: fullTaskDate,
-                        reminderMinutes: _selectedReminder,
-                      );
-                    }
+                          if (isEditing) {
+                            final updatedTask = widget.taskToEdit!.copyWith(
+                              title: _titleController.text,
+                              description: _descController.text,
+                              priority: _selectedPriority,
+                              color: _getPriorityColor(_selectedPriority),
+                              date: fullTaskDate,
+                              reminderMinutes: _selectedReminder,
+                            );
+                            await TaskRepository().updateTask(updatedTask);
+                          } else {
+                            await TaskRepository().saveTask(
+                              title: _titleController.text,
+                              description: _descController.text,
+                              priority: _selectedPriority,
+                              color: _getPriorityColor(_selectedPriority),
+                              date: fullTaskDate,
+                              reminderMinutes: _selectedReminder,
+                            );
+                          }
 
-                    if (_selectedReminder != null) {
-                      final DateTime reminderTime = fullTaskDate.subtract(Duration(minutes: _selectedReminder!));
-                      if (reminderTime.isAfter(DateTime.now())) {
-                        final int notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-                        await NotificationService.scheduleNotification(
-                          id: notificationId,
-                          title: '⏰ Recordatorio: ${_titleController.text}',
-                          body: 'Faltan $_selectedReminder minutos para tu tarea.',
-                          scheduledDate: reminderTime,
-                        );
+                          if (_selectedReminder != null) {
+                            final DateTime reminderTime = fullTaskDate.subtract(
+                              Duration(minutes: _selectedReminder!),
+                            );
+                            if (reminderTime.isAfter(DateTime.now())) {
+                              final int notificationId = DateTime.now()
+                                  .millisecondsSinceEpoch
+                                  .remainder(100000);
+                              await NotificationService.scheduleNotification(
+                                id: notificationId,
+                                title:
+                                    '⏰ Recordatorio: ${_titleController.text}',
+                                body:
+                                    'Faltan $_selectedReminder minutos para tu tarea.',
+                                scheduledDate: reminderTime,
+                              );
+                            }
+                          }
+
+                          if (mounted) Navigator.pop(context);
+                        }
                       }
-                    }
-
-                    if (mounted) Navigator.pop(context);
-                  }
-                } : () {
-                  // Si el usuario consigue pulsar estando desactivado (raro, pero por seguridad)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("No hay conexión. No se puede guardar."), backgroundColor: Colors.orange),
-                  );
-                },
+                    : () {
+                        // Si el usuario consigue pulsar estando desactivado (raro, pero por seguridad)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "No hay conexión. No se puede guardar.",
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      },
                 child: Text(
-                  !_isConnected 
-                    ? "Sin conexión ☁️" // Mensaje si no hay internet
-                    : (isEditing ? "guardar_cambios".tr() : "crear_tarea".tr()),
-                  style: TextStyle(color: isDark ? Colors.black : Colors.white)
+                  !_isConnected
+                      ? "Sin conexión ☁️" // Mensaje si no hay internet
+                      : (isEditing
+                            ? "guardar_cambios".tr()
+                            : "crear_tarea".tr()),
+                  style: TextStyle(color: isDark ? Colors.black : Colors.white),
                 ),
               ),
             ],

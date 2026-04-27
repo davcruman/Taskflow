@@ -19,10 +19,12 @@ class UIProvider extends ChangeNotifier {
   Future<void> _loadPreferences() async {
     try {
       AppLogger.i("⚙️ [START] _loadPreferences");
-      AppLogger.i("⚙️ Cargando preferencias de usuario desde SharedPreferences...");
-      
+      AppLogger.i(
+        "⚙️ Cargando preferencias de usuario desde SharedPreferences...",
+      );
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Cargar Tema
       final isDark = prefs.getBool('isDarkMode') ?? false;
       _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
@@ -30,7 +32,9 @@ class UIProvider extends ChangeNotifier {
 
       // Cargar Vibración
       _vibrationEnabled = prefs.getBool('vibrationEnabled') ?? true;
-      AppLogger.i("📳 Vibración recuperada: ${_vibrationEnabled ? 'Activada' : 'Desactivada'}");
+      AppLogger.i(
+        "📳 Vibración recuperada: ${_vibrationEnabled ? 'Activada' : 'Desactivada'}",
+      );
 
       AppLogger.i("🔄 Notificando listeners tras cargar preferencias");
       notifyListeners();
@@ -66,7 +70,9 @@ class UIProvider extends ChangeNotifier {
     try {
       AppLogger.i("⚙️ [START] toggleVibration");
       _vibrationEnabled = value;
-      AppLogger.i("📳 Cambiando vibración a: ${value ? 'Activada' : 'Desactivada'}");
+      AppLogger.i(
+        "📳 Cambiando vibración a: ${value ? 'Activada' : 'Desactivada'}",
+      );
 
       AppLogger.i("🔄 Notificando listeners por cambio de vibración");
       notifyListeners();
@@ -88,10 +94,12 @@ class UIProvider extends ChangeNotifier {
       AppLogger.i("🌐 Cambiando idioma a: $code");
 
       final newLocale = Locale(code);
-      context.setLocale(newLocale); 
-      
+      context.setLocale(newLocale);
+
       // Verificamos si el cambio se aplicó
-      AppLogger.i("✅ Idioma establecido correctamente: ${context.locale.languageCode}");
+      AppLogger.i(
+        "✅ Idioma establecido correctamente: ${context.locale.languageCode}",
+      );
 
       AppLogger.i("🔄 Notificando listeners por cambio de idioma");
       notifyListeners();

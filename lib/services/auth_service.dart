@@ -8,7 +8,9 @@ class AuthService {
   Stream<User?> get usuarioEstado {
     return _auth.authStateChanges().map((user) {
       if (user != null) {
-        AppLogger.i("🔐 Usuario detectado: ${user.email} | Nombre: ${user.displayName} (UID: ${user.uid})");
+        AppLogger.i(
+          "🔐 Usuario detectado: ${user.email} | Nombre: ${user.displayName} (UID: ${user.uid})",
+        );
       } else {
         AppLogger.w("👤 Estado Auth: Sin usuario conectado");
       }
@@ -17,14 +19,20 @@ class AuthService {
   }
 
   // REGISTRO (Actualizado para guardar el Nombre)
-  Future<String?> registrar(String email, String password, String nombre) async {
+  Future<String?> registrar(
+    String email,
+    String password,
+    String nombre,
+  ) async {
     try {
-      AppLogger.i("🆕 Intentando registrar usuario: $email con nombre: $nombre");
-      
+      AppLogger.i(
+        "🆕 Intentando registrar usuario: $email con nombre: $nombre",
+      );
+
       // 1. Crear el usuario
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(), 
-        password: password
+        email: email.trim(),
+        password: password,
       );
 
       // 2. SOLUCIÓN PROBLEMA DISPLAYNAME: Actualizar el perfil con el nombre
@@ -32,13 +40,19 @@ class AuthService {
         await credential.user!.updateDisplayName(nombre);
         // Forzamos recarga para que el cambio sea inmediato
         await credential.user!.reload();
-        AppLogger.i("✅ Nombre '$nombre' asignado correctamente a ${credential.user!.email}");
+        AppLogger.i(
+          "✅ Nombre '$nombre' asignado correctamente a ${credential.user!.email}",
+        );
       }
 
       AppLogger.i("✅ Registro completo para: $email");
       return null;
     } on FirebaseAuthException catch (e) {
-      AppLogger.e("❌ Error en registro de Firebase", e.code, StackTrace.current);
+      AppLogger.e(
+        "❌ Error en registro de Firebase",
+        e.code,
+        StackTrace.current,
+      );
       return _manejarError(e);
     } catch (e) {
       AppLogger.e("🔥 Error desconocido en registro", e);
@@ -50,7 +64,10 @@ class AuthService {
   Future<String?> iniciarSesion(String email, String password) async {
     try {
       AppLogger.i("🔑 Intentando login: $email");
-      await _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+      await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
       AppLogger.i("✅ Login correcto: $email");
       return null;
     } on FirebaseAuthException catch (e) {
@@ -89,15 +106,24 @@ class AuthService {
   String _manejarError(FirebaseAuthException e) {
     AppLogger.w("Analizando error de Firebase: ${e.code}");
     switch (e.code) {
-      case 'user-not-found': return 'No existe el usuario.';
-      case 'wrong-password': return 'Contraseña incorrecta.';
-      case 'email-already-in-use': return 'El email ya está en uso.';
-      case 'invalid-email': return 'Email no válido.';
-      case 'weak-password': return 'Contraseña muy corta (mín. 6 caracteres).';
-      case 'network-request-failed': return 'Sin conexión a internet.';
-      case 'too-many-requests': return 'Demasiados intentos. Inténtalo más tarde.';
-      case 'user-disabled': return 'Esta cuenta ha sido deshabilitada.';
-      default: return 'Ocurrió un error inesperado (${e.code}).';
+      case 'user-not-found':
+        return 'No existe el usuario.';
+      case 'wrong-password':
+        return 'Contraseña incorrecta.';
+      case 'email-already-in-use':
+        return 'El email ya está en uso.';
+      case 'invalid-email':
+        return 'Email no válido.';
+      case 'weak-password':
+        return 'Contraseña muy corta (mín. 6 caracteres).';
+      case 'network-request-failed':
+        return 'Sin conexión a internet.';
+      case 'too-many-requests':
+        return 'Demasiados intentos. Inténtalo más tarde.';
+      case 'user-disabled':
+        return 'Esta cuenta ha sido deshabilitada.';
+      default:
+        return 'Ocurrió un error inesperado (${e.code}).';
     }
   }
 }

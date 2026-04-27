@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bg = isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F7);
-    
+
     final taskRepo = TaskRepository();
     // Nota: Aunque ya no mostramos el nombre, mantenemos la lógica por si la necesitas luego
     final user = FirebaseAuth.instance.currentUser;
@@ -42,17 +42,30 @@ class _HomeScreenState extends State<HomeScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.calendar_month_outlined, size: 22),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarScreen())),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.settings_outlined, size: 22),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
               ),
               const SizedBox(width: 10),
             ],
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 25, bottom: 15),
-              title: const Text("TaskFlow", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26, letterSpacing: -1)),
+              title: const Text(
+                "TaskFlow",
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 26,
+                  letterSpacing: -1,
+                ),
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -62,32 +75,47 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // MENSAJE ELIMINADO AQUÍ
-                  const SizedBox(height: 10), // Ajuste de margen superior para el buscador
+                  const SizedBox(
+                    height: 10,
+                  ), // Ajuste de margen superior para el buscador
                   TextField(
-                    onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
+                    onChanged: (value) =>
+                        setState(() => searchQuery = value.toLowerCase()),
                     decoration: InputDecoration(
                       hintText: "buscar_tareas".tr(),
                       prefixIcon: const Icon(Icons.search, size: 20),
                       filled: true,
-                      fillColor: isDark ? Colors.white.withValues(alpha:0.05) : Colors.black.withValues(alpha : 0.05),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 15),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: ["Todas", "Pendientes", "Completadas"].map((filter) {
+                      children: ["Todas", "Pendientes", "Completadas"].map((
+                        filter,
+                      ) {
                         bool isSelected = filterType == filter;
-                        String label = filter.toLowerCase().tr(); 
+                        String label = filter.toLowerCase().tr();
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: ChoiceChip(
                             label: Text(label),
                             selected: isSelected,
-                            onSelected: (val) => setState(() => filterType = filter),
+                            onSelected: (val) =>
+                                setState(() => filterType = filter),
                             selectedColor: isDark ? Colors.white : Colors.black,
-                            labelStyle: TextStyle(color: isSelected ? (isDark ? Colors.black : Colors.white) : (isDark ? Colors.white : Colors.black)),
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? (isDark ? Colors.black : Colors.white)
+                                  : (isDark ? Colors.white : Colors.black),
+                            ),
                           ),
                         );
                       }).toList(),
@@ -96,36 +124,59 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 30),
                   Text(
                     "mis_tareas".tr(),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2, color: isDark ? Colors.white30 : Colors.black26),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: isDark ? Colors.white30 : Colors.black26,
+                    ),
                   ),
                   const SizedBox(height: 15),
                   StreamBuilder<List<Task>>(
                     stream: taskRepo.getTasks(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
                       final allTasks = snapshot.data!;
                       final filteredTasks = allTasks.where((task) {
-                        final matchesSearch = task.title.toLowerCase().contains(searchQuery);
+                        final matchesSearch = task.title.toLowerCase().contains(
+                          searchQuery,
+                        );
                         bool matchesStatus = true;
-                        if (filterType == "Pendientes") matchesStatus = !task.isCompleted;
-                        if (filterType == "Completadas") matchesStatus = task.isCompleted;
+                        if (filterType == "Pendientes")
+                          matchesStatus = !task.isCompleted;
+                        if (filterType == "Completadas")
+                          matchesStatus = task.isCompleted;
                         return matchesSearch && matchesStatus;
                       }).toList();
-                      
-                      if (filteredTasks.isEmpty) return Center(child: Text("sin_tareas".tr(), style: TextStyle(color: isDark ? Colors.white30 : Colors.black26)));
-                      
+
+                      if (filteredTasks.isEmpty)
+                        return Center(
+                          child: Text(
+                            "sin_tareas".tr(),
+                            style: TextStyle(
+                              color: isDark ? Colors.white30 : Colors.black26,
+                            ),
+                          ),
+                        );
+
                       return Column(
-                        children: filteredTasks.map((t) => TaskItem(
-                          task: t, 
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => AddTaskScreen(taskToEdit: t),
+                        children: filteredTasks
+                            .map(
+                              (t) => TaskItem(
+                                task: t,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          AddTaskScreen(taskToEdit: t),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          }
-                        )).toList()
+                            )
+                            .toList(),
                       );
                     },
                   ),
@@ -136,8 +187,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddTaskScreen())),
-        label: Text("anadir".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+        ),
+        label: Text(
+          "anadir".tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         icon: const Icon(Icons.add),
       ),
     );
